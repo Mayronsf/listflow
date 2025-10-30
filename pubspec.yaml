@@ -1,0 +1,43 @@
+name: openwhyd_music_app
+description: Aplicativo de curadoria musical usando a API Openwhyd
+
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  
+  # UI e navegação
+  cupertino_icons: ^1.0.2
+  material_design_icons_flutter: ^7.0.7296
+  
+  # Gerenciamento de estado
+  provider: ^6.1.1
+  
+  # Requisições HTTP
+  http: ^1.1.0
+  
+  # Persistência local
+  shared_preferences: ^2.2.2
+  
+  # Utilitários
+  cached_network_image: ^3.3.0
+  url_launcher: ^6.2.2
+  shimmer: ^3.0.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+
+flutter:
+  uses-material-design: true
+  
+  # assets:
+  #   - assets/images/
+  #   - assets/icons/
