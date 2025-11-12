@@ -5,6 +5,7 @@ import '../widgets/playlist_card.dart';
 import '../widgets/empty_widget.dart';
 import '../widgets/error_widget.dart';
 import 'playlist_detail_screen.dart';
+import 'create_playlist_screen.dart';
 
 /// Tela de minhas playlists
 class MyPlaylistsScreen extends StatefulWidget {
@@ -30,7 +31,17 @@ class _MyPlaylistsScreenState extends State<MyPlaylistsScreen> {
         title: const Text('Minhas Playlists'),
         actions: [
           IconButton(
-            onPressed: _showCreatePlaylistDialog,
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const CreatePlaylistScreen(),
+                ),
+              ).then((_) {
+                // Recarregar playlists após criar
+                context.read<MusicProvider>().loadLocalData();
+              });
+            },
             icon: const Icon(Icons.add),
           ),
         ],
@@ -53,7 +64,16 @@ class _MyPlaylistsScreenState extends State<MyPlaylistsScreen> {
               subtitle: 'Crie sua primeira playlist personalizada',
               icon: Icons.playlist_add,
               action: ElevatedButton.icon(
-                onPressed: _showCreatePlaylistDialog,
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const CreatePlaylistScreen(),
+                    ),
+                  ).then((_) {
+                    context.read<MusicProvider>().loadLocalData();
+                  });
+                },
                 icon: const Icon(Icons.add),
                 label: const Text('Criar Playlist'),
               ),
@@ -97,63 +117,6 @@ class _MyPlaylistsScreenState extends State<MyPlaylistsScreen> {
     );
   }
 
-  void _showCreatePlaylistDialog() {
-    final nameController = TextEditingController();
-    final descriptionController = TextEditingController();
-
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Criar Nova Playlist'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: nameController,
-              decoration: const InputDecoration(
-                labelText: 'Nome da playlist',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: descriptionController,
-              decoration: const InputDecoration(
-                labelText: 'Descrição (opcional)',
-                border: OutlineInputBorder(),
-              ),
-              maxLines: 3,
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancelar'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              if (nameController.text.trim().isNotEmpty) {
-                context.read<MusicProvider>().createLocalPlaylist(
-                  nameController.text.trim(),
-                  description: descriptionController.text.trim().isNotEmpty
-                      ? descriptionController.text.trim()
-                      : null,
-                );
-                Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Playlist criada com sucesso!'),
-                  ),
-                );
-              }
-            },
-            child: const Text('Criar'),
-          ),
-        ],
-      ),
-    );
-  }
 
   void _showDeletePlaylistDialog(dynamic playlist) {
     showDialog(

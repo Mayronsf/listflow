@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../providers/theme_provider.dart';
 import '../providers/music_provider.dart';
 
 /// Tela de perfil do usuário
@@ -12,7 +11,7 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  String _userName = 'Usuário OpenWhyd';
+  String _userName = 'Listflow';
 
   @override
   Widget build(BuildContext context) {
@@ -28,10 +27,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
           children: [
             // Informações do usuário
             _buildUserInfo(context),
-            const SizedBox(height: 24),
-            
-            // Configurações
-            _buildSettingsSection(context),
             const SizedBox(height: 24),
             
             // Estatísticas
@@ -95,14 +90,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'Membro desde 2024',
+                    'Membro desde 2025',
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       color: Colors.grey[600],
                     ),
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Explore e descubra música incrível com a comunidade OpenWhyd',
+                    'Explore e descubra música incrível com a comunidade Listflow',
                     style: Theme.of(context).textTheme.bodyMedium,
                   ),
                 ],
@@ -110,36 +105,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildSettingsSection(BuildContext context) {
-    return Card(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Text(
-              'Configurações',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-          Consumer<ThemeProvider>(
-            builder: (context, themeProvider, child) {
-              return SwitchListTile(
-                title: const Text('Modo Escuro'),
-                subtitle: const Text('Alternar entre tema claro e escuro'),
-                value: themeProvider.isDarkMode,
-                onChanged: (value) => themeProvider.toggleTheme(),
-                secondary: const Icon(Icons.dark_mode),
-              );
-            },
-          ),
-        ],
       ),
     );
   }

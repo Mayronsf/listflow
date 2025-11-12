@@ -25,7 +25,7 @@ class MyApp extends StatelessWidget {
       child: Consumer<ThemeProvider>(
         builder: (context, themeProvider, child) {
           return MaterialApp(
-            title: 'OpenWhyd Music',
+            title: 'Listflow',
             theme: themeProvider.currentTheme,
             home: const MainScreen(),
             debugShowCheckedModeBanner: false,

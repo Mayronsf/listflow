@@ -1,247 +1,197 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'dart:async';
 import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import '../providers/music_provider.dart';
+import '../models/artist.dart';
 import '../models/track.dart';
+import '../providers/music_provider.dart';
 import '../widgets/track_tile.dart';
-import '../widgets/playlist_card.dart';
 import '../widgets/loading_widget.dart';
 import '../widgets/error_widget.dart';
 import '../widgets/empty_widget.dart';
-import 'playlist_detail_screen.dart';
-import 'artist_profile_screen.dart';
 import 'create_playlist_screen.dart';
 
-/// Tela de busca
-class SearchScreen extends StatefulWidget {
-  const SearchScreen({super.key});
+/// Tela de perfil do artista
+class ArtistProfileScreen extends StatefulWidget {
+  final Artist artist;
+
+  const ArtistProfileScreen({
+    super.key,
+    required this.artist,
+  });
 
   @override
-  State<SearchScreen> createState() => _SearchScreenState();
+  State<ArtistProfileScreen> createState() => _ArtistProfileScreenState();
 }
 
-class _SearchScreenState extends State<SearchScreen> with TickerProviderStateMixin {
-  final TextEditingController _searchController = TextEditingController();
-  late TabController _tabController;
-  String _currentQuery = '';
-  Duration _debounceDuration = const Duration(milliseconds: 350);
-  Timer? _debounce;
-
+class _ArtistProfileScreenState extends State<ArtistProfileScreen> {
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
-  }
-
-  @override
-  void dispose() {
-    _debounce?.cancel();
-    _searchController.dispose();
-    _tabController.dispose();
-    super.dispose();
-  }
-
-  void _performSearch(String query) {
-    if (query.trim().isEmpty) return;
-    
-    setState(() {
-      _currentQuery = query;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<MusicProvider>().loadArtist(widget.artist.id);
     });
-    
-    final musicProvider = context.read<MusicProvider>();
-    musicProvider.searchTracks(query);
-    musicProvider.searchArtistsByQuery(query);
-    musicProvider.searchPlaylists(query);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: TextField(
-          controller: _searchController,
-          decoration: const InputDecoration(
-            hintText: 'Buscar músicas e playlists...',
-            border: InputBorder.none,
-            hintStyle: TextStyle(color: Colors.grey),
-          ),
-          style: const TextStyle(color: Colors.white),
-          onChanged: (q) {
-            setState(() { _currentQuery = q; });
-            _debounce?.cancel();
-            _debounce = Timer(_debounceDuration, () => _performSearch(q));
-          },
-          onSubmitted: _performSearch,
-        ),
+        title: Text(widget.artist.name),
         actions: [
-          IconButton(
-            onPressed: () => _performSearch(_searchController.text),
-            icon: const Icon(Icons.search),
-          ),
-        ],
-        bottom: TabBar(
-          controller: _tabController,
-          tabs: const [
-            Tab(text: 'Faixas'),
-            Tab(text: 'Artistas'),
-            Tab(text: 'Playlists'),
-          ],
-        ),
-      ),
-      body: TabBarView(
-        controller: _tabController,
-        children: [
-          _buildTracksTab(),
-          _buildArtistsTab(),
-          _buildPlaylistsTab(),
+          if (widget.artist.spotifyUrl != null)
+            IconButton(
+              onPressed: () async {
+                // Abrir no Spotify se disponível
+              },
+              icon: const Icon(Icons.open_in_new),
+            ),
         ],
       ),
-    );
-  }
-
-  Widget _buildTracksTab() {
-    return Consumer<MusicProvider>(
-      builder: (context, musicProvider, child) {
-        if (_currentQuery.isEmpty) {
-          return const EmptyWidget(
-            message: 'Digite algo para buscar',
-            subtitle: 'Encontre suas músicas favoritas',
-            icon: Icons.search,
-          );
-        }
-
-        if (musicProvider.isSearching) {
-          return const CenterLoadingWidget(message: 'Buscando faixas...');
-        }
-
-        if (musicProvider.error != null) {
-          return CustomErrorWidget(
-            message: musicProvider.error!,
-            onRetry: () {
-              musicProvider.clearError();
-              _performSearch(_currentQuery);
-            },
-          );
-        }
-
-        if (musicProvider.searchTracksList.isEmpty) {
-          return EmptyWidget(
-            message: 'Nenhuma faixa encontrada',
-            subtitle: 'Tente buscar com outros termos',
-            icon: Icons.music_off,
-            action: ElevatedButton(
-              onPressed: () => _performSearch(_currentQuery),
-              child: const Text('Tentar novamente'),
-            ),
-          );
-        }
-
-        return ListView.builder(
-          itemCount: musicProvider.searchTracksList.length,
-          itemBuilder: (context, index) {
-            final track = musicProvider.searchTracksList[index];
-            final isFavorite = musicProvider.isFavorite(track.id);
-            
-            return TrackTile(
-              track: track,
-              isFavorite: isFavorite,
-              onFavorite: () {
-                if (isFavorite) {
-                  musicProvider.removeFromFavorites(track.id);
-                } else {
-                  musicProvider.addToFavorites(track);
-                }
-              },
-              onAddToPlaylist: () {
-                _showAddToPlaylistDialog(track);
-              },
-            );
-          },
-        );
-      },
-    );
-  }
-
-  Widget _buildArtistsTab() {
-    return Consumer<MusicProvider>(
-      builder: (context, musicProvider, child) {
-        if (_currentQuery.isEmpty) {
-          return const EmptyWidget(
-            message: 'Digite algo para buscar',
-            subtitle: 'Encontre seus artistas favoritos',
-            icon: Icons.person,
-          );
-        }
-
-        if (musicProvider.isSearching) {
-          return const CenterLoadingWidget(message: 'Buscando artistas...');
-        }
-
-        if (musicProvider.error != null) {
-          return CustomErrorWidget(
-            message: musicProvider.error!,
-            onRetry: () {
-              musicProvider.clearError();
-              _performSearch(_currentQuery);
-            },
-          );
-        }
-
-        if (musicProvider.searchArtists.isEmpty) {
-          return EmptyWidget(
-            message: 'Nenhum artista encontrado',
-            subtitle: 'Tente buscar com outros termos',
-            icon: Icons.person_off,
-            action: ElevatedButton(
-              onPressed: () => _performSearch(_currentQuery),
-              child: const Text('Tentar novamente'),
-            ),
-          );
-        }
-
-        return ListView.builder(
-          padding: const EdgeInsets.all(16),
-          itemCount: musicProvider.searchArtists.length,
-          itemBuilder: (context, index) {
-            final artist = musicProvider.searchArtists[index];
-            return Card(
-              margin: const EdgeInsets.only(bottom: 12),
-              child: ListTile(
-                leading: CircleAvatar(
-                  radius: 30,
-                  backgroundColor: Colors.grey[300],
-                  backgroundImage: artist.coverUrl != null
-                      ? CachedNetworkImageProvider(artist.coverUrl!)
-                      : null,
-                  child: artist.coverUrl == null
-                      ? const Icon(Icons.person, size: 30)
-                      : null,
+      body: Consumer<MusicProvider>(
+        builder: (context, musicProvider, child) {
+          return CustomScrollView(
+            slivers: [
+              // Cabeçalho do artista
+              SliverToBoxAdapter(
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    children: [
+                      // Foto do artista
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: Container(
+                          width: 200,
+                          height: 200,
+                          decoration: BoxDecoration(
+                            color: Colors.grey[300],
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: widget.artist.coverUrl != null
+                              ? CachedNetworkImage(
+                                  imageUrl: widget.artist.coverUrl!,
+                                  fit: BoxFit.cover,
+                                  placeholder: (context, url) => const Icon(
+                                    Icons.person,
+                                    size: 80,
+                                    color: Colors.grey,
+                                  ),
+                                  errorWidget: (context, url, error) => const Icon(
+                                    Icons.person,
+                                    size: 80,
+                                    color: Colors.grey,
+                                  ),
+                                )
+                              : const Icon(
+                                  Icons.person,
+                                  size: 80,
+                                  color: Colors.grey,
+                                ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      
+                      // Nome do artista
+                      Text(
+                        widget.artist.name,
+                        style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 8),
+                      
+                      // Informações do artista
+                      if (widget.artist.followers != null)
+                        Text(
+                          '${_formatFollowers(widget.artist.followers!)} seguidores',
+                          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                                color: Colors.grey[600],
+                              ),
+                          textAlign: TextAlign.center,
+                        ),
+                      const SizedBox(height: 8),
+                      
+                      // Gêneros
+                      if (widget.artist.genres.isNotEmpty)
+                        Wrap(
+                          alignment: WrapAlignment.center,
+                          spacing: 8,
+                          children: widget.artist.genres.take(5).map((genre) {
+                            return Chip(
+                              label: Text(genre),
+                              backgroundColor: Theme.of(context).primaryColor.withOpacity(0.1),
+                            );
+                          }).toList(),
+                        ),
+                      const SizedBox(height: 16),
+                      
+                      // Contador de músicas
+                      Text(
+                        '${musicProvider.artistTracks.length} músicas',
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: Colors.grey[500],
+                            ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
                 ),
-                title: Text(
-                  artist.name,
-                  style: const TextStyle(fontWeight: FontWeight.bold),
-                ),
-                subtitle: artist.genres.isNotEmpty
-                    ? Text(artist.genres.take(3).join(', '))
-                    : artist.followers != null
-                        ? Text('${_formatFollowers(artist.followers!)} seguidores')
-                        : null,
-                trailing: const Icon(Icons.chevron_right),
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => ArtistProfileScreen(artist: artist),
-                    ),
-                  );
-                },
               ),
-            );
-          },
-        );
-      },
+              
+              // Lista de músicas
+              if (musicProvider.isLoading)
+                const SliverFillRemaining(
+                  child: CenterLoadingWidget(message: 'Carregando músicas...'),
+                )
+              else if (musicProvider.error != null)
+                SliverFillRemaining(
+                  child: CustomErrorWidget(
+                    message: musicProvider.error!,
+                    onRetry: () {
+                      musicProvider.clearError();
+                      musicProvider.loadArtist(widget.artist.id);
+                    },
+                  ),
+                )
+              else if (musicProvider.artistTracks.isEmpty)
+                const SliverFillRemaining(
+                  child: EmptyWidget(
+                    message: 'Nenhuma música encontrada',
+                    subtitle: 'Este artista ainda não tem músicas disponíveis',
+                    icon: Icons.music_off,
+                  ),
+                )
+              else
+                SliverList(
+                  delegate: SliverChildBuilderDelegate(
+                    (context, index) {
+                      final track = musicProvider.artistTracks[index];
+                      final isFavorite = musicProvider.isFavorite(track.id);
+                      
+                      return TrackTile(
+                        track: track,
+                        isFavorite: isFavorite,
+                        onFavorite: () {
+                          if (isFavorite) {
+                            musicProvider.removeFromFavorites(track.id);
+                          } else {
+                            musicProvider.addToFavorites(track);
+                          }
+                        },
+                        onAddToPlaylist: () {
+                          _showAddToPlaylistDialog(track);
+                        },
+                      );
+                    },
+                    childCount: musicProvider.artistTracks.length,
+                  ),
+                ),
+            ],
+          );
+        },
+      ),
     );
   }
 
@@ -252,73 +202,6 @@ class _SearchScreenState extends State<SearchScreen> with TickerProviderStateMix
       return '${(followers / 1000).toStringAsFixed(1)}K';
     }
     return followers.toString();
-  }
-
-  Widget _buildPlaylistsTab() {
-    return Consumer<MusicProvider>(
-      builder: (context, musicProvider, child) {
-        if (_currentQuery.isEmpty) {
-          return const EmptyWidget(
-            message: 'Digite algo para buscar',
-            subtitle: 'Encontre playlists incríveis',
-            icon: Icons.search,
-          );
-        }
-
-        if (musicProvider.isSearching) {
-          return const CenterLoadingWidget(message: 'Buscando playlists...');
-        }
-
-        if (musicProvider.error != null) {
-          return CustomErrorWidget(
-            message: musicProvider.error!,
-            onRetry: () {
-              musicProvider.clearError();
-              _performSearch(_currentQuery);
-            },
-          );
-        }
-
-        if (musicProvider.searchResults.isEmpty) {
-          return EmptyWidget(
-            message: 'Nenhuma playlist encontrada',
-            subtitle: 'Tente buscar com outros termos',
-            icon: Icons.playlist_play,
-            action: ElevatedButton(
-              onPressed: () => _performSearch(_currentQuery),
-              child: const Text('Tentar novamente'),
-            ),
-          );
-        }
-
-        return GridView.builder(
-          padding: const EdgeInsets.all(16),
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2,
-            childAspectRatio: 0.8,
-            crossAxisSpacing: 16,
-            mainAxisSpacing: 16,
-          ),
-          itemCount: musicProvider.searchResults.length,
-          itemBuilder: (context, index) {
-            final playlist = musicProvider.searchResults[index];
-            return PlaylistCard(
-              playlist: playlist,
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => PlaylistDetailScreen(
-                      playlist: playlist,
-                    ),
-                  ),
-                );
-              },
-            );
-          },
-        );
-      },
-    );
   }
 
   void _showAddToPlaylistDialog(Track track) {
@@ -500,3 +383,4 @@ class _SearchScreenState extends State<SearchScreen> with TickerProviderStateMix
     );
   }
 }
+

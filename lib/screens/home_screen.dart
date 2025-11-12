@@ -28,16 +28,15 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('OpenWhyd Music'),
-        centerTitle: true,
-        actions: [
-          IconButton(
-            onPressed: () {
-              // Implementar busca
-            },
-            icon: const Icon(Icons.search),
+        toolbarHeight: 80,
+        title: SizedBox(
+          height: 64,
+          child: Image.asset(
+            'img/LOGOS (2).png',
+            fit: BoxFit.contain,
           ),
-        ],
+        ),
+        centerTitle: true,
       ),
       body: Consumer<MusicProvider>(
         builder: (context, musicProvider, child) {
@@ -138,17 +137,22 @@ class _HomeScreenState extends State<HomeScreen> {
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: track.coverUrl != null
-                                  ? Image.network(
-                                      track.coverUrl!,
-                                      fit: BoxFit.cover,
-                                      errorBuilder: (context, error, stackTrace) {
-                                        return const Icon(
-                                          Icons.music_note,
-                                          size: 30,
-                                          color: Colors.grey,
-                                        );
-                                      },
-                                    )
+                                  ? (track.coverUrl!.startsWith('asset://')
+                                      ? Image.asset(
+                                          track.coverUrl!.replaceFirst('asset://', ''),
+                                          fit: BoxFit.cover,
+                                        )
+                                      : Image.network(
+                                          track.coverUrl!,
+                                          fit: BoxFit.cover,
+                                          errorBuilder: (context, error, stackTrace) {
+                                            return const Icon(
+                                              Icons.music_note,
+                                              size: 30,
+                                              color: Colors.grey,
+                                            );
+                                          },
+                                        ))
                                   : const Icon(
                                       Icons.music_note,
                                       size: 30,

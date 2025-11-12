@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:provider/provider.dart';
+import '../providers/music_provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../models/track.dart';
+import '../screens/artist_profile_screen.dart';
 
 /// Tile para exibir uma faixa musical
 class TrackTile extends StatelessWidget {
@@ -37,26 +40,31 @@ class TrackTile extends StatelessWidget {
               borderRadius: BorderRadius.circular(8),
             ),
             child: track.coverUrl != null
-                ? CachedNetworkImage(
-                    imageUrl: track.coverUrl!,
-                    fit: BoxFit.cover,
-                    placeholder: (context, url) => Container(
-                      color: Colors.grey[300],
-                      child: const Icon(
-                        Icons.music_note,
-                        size: 30,
-                        color: Colors.grey,
-                      ),
-                    ),
-                    errorWidget: (context, url, error) => Container(
-                      color: Colors.grey[300],
-                      child: const Icon(
-                        Icons.music_note,
-                        size: 30,
-                        color: Colors.grey,
-                      ),
-                    ),
-                  )
+                ? (track.coverUrl!.startsWith('asset://')
+                    ? Image.asset(
+                        track.coverUrl!.replaceFirst('asset://', ''),
+                        fit: BoxFit.cover,
+                      )
+                    : CachedNetworkImage(
+                        imageUrl: track.coverUrl!,
+                        fit: BoxFit.cover,
+                        placeholder: (context, url) => Container(
+                          color: Colors.grey[300],
+                          child: const Icon(
+                            Icons.music_note,
+                            size: 30,
+                            color: Colors.grey,
+                          ),
+                        ),
+                        errorWidget: (context, url, error) => Container(
+                          color: Colors.grey[300],
+                          child: const Icon(
+                            Icons.music_note,
+                            size: 30,
+                            color: Colors.grey,
+                          ),
+                        ),
+                      ))
                 : Container(
                     color: Colors.grey[300],
                     child: const Icon(
@@ -80,11 +88,31 @@ class TrackTile extends StatelessWidget {
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              track.artist,
-              style: Theme.of(context).textTheme.bodyMedium,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
+            GestureDetector(
+              onTap: track.sourceType == 'spotify' && track.artist.isNotEmpty
+                  ? () async {
+                      // Busca o artista pelo nome e abre o perfil
+                      final musicProvider = context.read<MusicProvider>();
+                      await musicProvider.searchArtistsByQuery(track.artist);
+                      if (musicProvider.searchArtists.isNotEmpty) {
+                        final artist = musicProvider.searchArtists.first;
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => ArtistProfileScreen(artist: artist),
+                          ),
+                        );
+                      }
+                    }
+                  : null,
+              child: Text(
+                track.artist,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Colors.white,
+                    ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
             if (track.sourceType != null) ...[
               const SizedBox(height: 2),
@@ -93,13 +121,13 @@ class TrackTile extends StatelessWidget {
                   Icon(
                     _getSourceIcon(track.sourceType!),
                     size: 12,
-                    color: Colors.grey[600],
+                    color: Colors.white,
                   ),
                   const SizedBox(width: 4),
                   Text(
                     _getSourceName(track.sourceType!),
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Colors.grey[600],
+                      color: Colors.white,
                     ),
                   ),
                 ],
@@ -134,12 +162,26 @@ class TrackTile extends StatelessWidget {
                 constraints: const BoxConstraints(),
               ),
             
-            // Botão de reproduzir (abrir link)
+            // Botão de preview (Spotify) ou abrir link completo
+            IconButton(
+              onPressed: () {
+                final music = context.read<MusicProvider>();
+                if (track.previewUrl != null) {
+                  music.playPreview(track);
+                } else if (track.sourceUrl != null) {
+                  _launchUrl(track.sourceUrl!);
+                }
+              },
+              icon: const Icon(Icons.play_arrow),
+              iconSize: 20,
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(),
+            ),
             if (track.sourceUrl != null)
               IconButton(
                 onPressed: () => _launchUrl(track.sourceUrl!),
-                icon: const Icon(Icons.play_arrow),
-                iconSize: 20,
+                icon: const Icon(Icons.open_in_new),
+                iconSize: 18,
                 padding: EdgeInsets.zero,
                 constraints: const BoxConstraints(),
               ),

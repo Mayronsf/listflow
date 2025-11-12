@@ -1,11 +1,14 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../models/playlist.dart';
 import '../providers/music_provider.dart';
 import '../widgets/track_tile.dart';
 import '../widgets/loading_widget.dart';
 import '../widgets/error_widget.dart';
 import '../widgets/empty_widget.dart';
+import 'create_playlist_screen.dart';
 
 /// Tela de detalhes de uma playlist
 class PlaylistDetailScreen extends StatefulWidget {
@@ -38,12 +41,28 @@ class _PlaylistDetailScreenState extends State<PlaylistDetailScreen> {
           style: const TextStyle(fontSize: 18),
         ),
         actions: [
-          IconButton(
-            onPressed: () {
-              // Implementar compartilhar
-            },
-            icon: const Icon(Icons.share),
-          ),
+          // Botão de editar apenas para playlists locais
+          if (widget.playlist.isLocal)
+            IconButton(
+              icon: const Icon(Icons.edit),
+              onPressed: () async {
+                final result = await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => CreatePlaylistScreen(
+                      playlistToEdit: widget.playlist,
+                    ),
+                  ),
+                );
+                
+                // Se a playlist foi editada, recarrega os dados
+                if (result == true && mounted) {
+                  context.read<MusicProvider>().loadLocalData();
+                  context.read<MusicProvider>().loadPlaylistTracks(widget.playlist.id);
+                }
+              },
+              tooltip: 'Editar Playlist',
+            ),
         ],
       ),
       body: Consumer<MusicProvider>(
@@ -66,17 +85,37 @@ class _PlaylistDetailScreenState extends State<PlaylistDetailScreen> {
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: widget.playlist.coverUrl != null
-                            ? Image.network(
-                                widget.playlist.coverUrl!,
-                                fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) {
-                                  return const Icon(
-                                    Icons.music_note,
-                                    size: 80,
-                                    color: Colors.grey,
-                                  );
-                                },
-                              )
+                            ? (widget.playlist.coverUrl!.startsWith('file://')
+                                ? Image.file(
+                                    File(widget.playlist.coverUrl!.replaceFirst('file://', '')),
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (context, error, stackTrace) {
+                                      return const Icon(
+                                        Icons.music_note,
+                                        size: 80,
+                                        color: Colors.grey,
+                                      );
+                                    },
+                                  )
+                                : widget.playlist.coverUrl!.startsWith('asset://')
+                                    ? Image.asset(
+                                        widget.playlist.coverUrl!.replaceFirst('asset://', ''),
+                                        fit: BoxFit.cover,
+                                      )
+                                    : CachedNetworkImage(
+                                        imageUrl: widget.playlist.coverUrl!,
+                                        fit: BoxFit.cover,
+                                        placeholder: (context, url) => const Icon(
+                                          Icons.music_note,
+                                          size: 80,
+                                          color: Colors.grey,
+                                        ),
+                                        errorWidget: (context, url, error) => const Icon(
+                                          Icons.music_note,
+                                          size: 80,
+                                          color: Colors.grey,
+                                        ),
+                                      ))
                             : const Icon(
                                 Icons.music_note,
                                 size: 80,
@@ -108,7 +147,7 @@ class _PlaylistDetailScreenState extends State<PlaylistDetailScreen> {
                     const SizedBox(height: 8),
                     
                     Text(
-                      '${musicProvider.currentPlaylistTracks.length} faixas',
+                      '${widget.playlist.isLocal ? widget.playlist.trackCount : musicProvider.currentPlaylistTracks.length} faixas',
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         color: Colors.grey[500],
                       ),
@@ -130,21 +169,26 @@ class _PlaylistDetailScreenState extends State<PlaylistDetailScreen> {
   }
 
   Widget _buildTracksList(MusicProvider musicProvider) {
-    if (musicProvider.isLoading) {
+    // Se for uma playlist local, usa as tracks diretamente da playlist
+    final tracksToShow = widget.playlist.isLocal && widget.playlist.tracks.isNotEmpty
+        ? widget.playlist.tracks
+        : musicProvider.currentPlaylistTracks;
+
+    if (musicProvider.isLoading && !widget.playlist.isLocal) {
       return const TrackLoadingList();
     }
 
-        if (musicProvider.error != null) {
-          return CustomErrorWidget(
-            message: musicProvider.error!,
-            onRetry: () {
-              musicProvider.clearError();
-              musicProvider.loadPlaylistTracks(widget.playlist.id);
-            },
-          );
-        }
+    if (musicProvider.error != null && !widget.playlist.isLocal) {
+      return CustomErrorWidget(
+        message: musicProvider.error!,
+        onRetry: () {
+          musicProvider.clearError();
+          musicProvider.loadPlaylistTracks(widget.playlist.id);
+        },
+      );
+    }
 
-    if (musicProvider.currentPlaylistTracks.isEmpty) {
+    if (tracksToShow.isEmpty) {
       return const EmptyWidget(
         message: 'Nenhuma faixa encontrada',
         subtitle: 'Esta playlist está vazia',
@@ -153,24 +197,61 @@ class _PlaylistDetailScreenState extends State<PlaylistDetailScreen> {
     }
 
     return ListView.builder(
-      itemCount: musicProvider.currentPlaylistTracks.length,
+      itemCount: tracksToShow.length,
       itemBuilder: (context, index) {
-        final track = musicProvider.currentPlaylistTracks[index];
+        final track = tracksToShow[index];
         final isFavorite = musicProvider.isFavorite(track.id);
         
-        return TrackTile(
-          track: track,
-          isFavorite: isFavorite,
-          onFavorite: () {
-            if (isFavorite) {
-              musicProvider.removeFromFavorites(track.id);
-            } else {
-              musicProvider.addToFavorites(track);
-            }
-          },
-          onAddToPlaylist: () {
-            _showAddToPlaylistDialog(track);
-          },
+        return Dismissible(
+          key: Key('${track.id}_${widget.playlist.id}'),
+          direction: widget.playlist.isLocal 
+              ? DismissDirection.endToStart 
+              : DismissDirection.none,
+          background: Container(
+            alignment: Alignment.centerRight,
+            padding: const EdgeInsets.only(right: 20),
+            color: Colors.red,
+            child: const Icon(
+              Icons.delete,
+              color: Colors.white,
+            ),
+          ),
+          onDismissed: widget.playlist.isLocal
+              ? (direction) {
+                  musicProvider.removeTrackFromLocalPlaylist(
+                    widget.playlist.id,
+                    track.id,
+                  );
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('${track.title} removida da playlist'),
+                      action: SnackBarAction(
+                        label: 'Desfazer',
+                        onPressed: () {
+                          musicProvider.addTrackToLocalPlaylist(
+                            widget.playlist.id,
+                            track,
+                          );
+                        },
+                      ),
+                    ),
+                  );
+                }
+              : null,
+          child: TrackTile(
+            track: track,
+            isFavorite: isFavorite,
+            onFavorite: () {
+              if (isFavorite) {
+                musicProvider.removeFromFavorites(track.id);
+              } else {
+                musicProvider.addToFavorites(track);
+              }
+            },
+            onAddToPlaylist: () {
+              _showAddToPlaylistDialog(track);
+            },
+          ),
         );
       },
     );

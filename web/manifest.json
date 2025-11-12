@@ -1,6 +1,6 @@
 {
-    "name": "openwhyd_music_app",
-    "short_name": "openwhyd_music_app",
+    "name": "Listflow",
+    "short_name": "Listflow",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

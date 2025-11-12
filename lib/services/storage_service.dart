@@ -10,6 +10,7 @@ class StorageService {
   static const String _favoritesKey = 'favorite_tracks';
   static const String _localPlaylistsKey = 'local_playlists';
   static const String _themeKey = 'is_dark_mode';
+  // Spotify token keys (used via generic helpers)
 
   static StorageService? _instance;
   static StorageService get instance => _instance ??= StorageService._();
@@ -21,6 +22,21 @@ class StorageService {
   /// Inicializa o serviço
   Future<void> init() async {
     _prefs ??= await SharedPreferences.getInstance();
+  }
+
+  // Generic helpers for small secure-ish storage (not encrypted)
+  Future<void> saveString(String key, String? value) async {
+    await _ensureInitialized();
+    if (value == null) {
+      await _prefs!.remove(key);
+    } else {
+      await _prefs!.setString(key, value);
+    }
+  }
+
+  Future<String?> loadString(String key) async {
+    await _ensureInitialized();
+    return _prefs!.getString(key);
   }
 
   /// Salva dados do usuário

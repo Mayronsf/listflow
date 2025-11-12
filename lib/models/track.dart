@@ -5,6 +5,7 @@ class Track {
   final String artist;
   final String? coverUrl;
   final String? sourceUrl;
+  final String? previewUrl;
   final String? sourceType; // youtube, soundcloud, etc.
   final String? playlistId;
   final DateTime? createdAt;
@@ -16,6 +17,7 @@ class Track {
     required this.artist,
     this.coverUrl,
     this.sourceUrl,
+    this.previewUrl,
     this.sourceType,
     this.playlistId,
     this.createdAt,
@@ -29,6 +31,7 @@ class Track {
       artist: json['author'] ?? json['artist'] ?? 'Artista desconhecido',
       coverUrl: json['img'] ?? json['coverUrl'],
       sourceUrl: json['url'] ?? json['sourceUrl'],
+      previewUrl: json['previewUrl'],
       sourceType: json['sourceType'] ?? _extractSourceType(json['url']),
       playlistId: json['playlistId'],
       createdAt: json['createdAt'] != null 
@@ -44,6 +47,7 @@ class Track {
       'artist': artist,
       'coverUrl': coverUrl,
       'sourceUrl': sourceUrl,
+      'previewUrl': previewUrl,
       'sourceType': sourceType,
       'playlistId': playlistId,
       'createdAt': createdAt?.toIso8601String(),
@@ -57,6 +61,7 @@ class Track {
     String? artist,
     String? coverUrl,
     String? sourceUrl,
+    String? previewUrl,
     String? sourceType,
     String? playlistId,
     DateTime? createdAt,
@@ -68,6 +73,7 @@ class Track {
       artist: artist ?? this.artist,
       coverUrl: coverUrl ?? this.coverUrl,
       sourceUrl: sourceUrl ?? this.sourceUrl,
+      previewUrl: previewUrl ?? this.previewUrl,
       sourceType: sourceType ?? this.sourceType,
       playlistId: playlistId ?? this.playlistId,
       createdAt: createdAt ?? this.createdAt,

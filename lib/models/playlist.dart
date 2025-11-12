@@ -46,6 +46,7 @@ class Playlist {
           ? DateTime.tryParse(json['createdAt']) 
           : null,
       isPublic: json['isPublic'] ?? true,
+      isLocal: json['isLocal'] ?? false,
     );
   }
 
