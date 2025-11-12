@@ -22,9 +22,11 @@ class MusicProvider with ChangeNotifier {
   List<Track> _searchTracks = [];
   List<Track> _currentPlaylistTracks = [];
   List<Track> _artistTracks = [];
+  List<Track> _topTracks = [];
   
   // Estado dos artistas
   List<Artist> _searchArtists = [];
+  List<Artist> _recommendedArtists = [];
   Artist? _currentArtist;
   
   // Estado de carregamento
@@ -42,7 +44,9 @@ class MusicProvider with ChangeNotifier {
   List<Track> get searchTracksList => _searchTracks;
   List<Track> get currentPlaylistTracks => _currentPlaylistTracks;
   List<Track> get artistTracks => _artistTracks;
+  List<Track> get topTracks => _topTracks;
   List<Artist> get searchArtists => _searchArtists;
+  List<Artist> get recommendedArtists => _recommendedArtists;
   Artist? get currentArtist => _currentArtist;
   bool get isLoading => _isLoading;
   bool get isSearching => _isSearching;
@@ -132,6 +136,30 @@ class MusicProvider with ChangeNotifier {
       _error = 'Erro ao carregar playlists: $e';
     } finally {
       _setLoading(false);
+    }
+  }
+
+  /// Carrega artistas recomendados
+  Future<void> loadRecommendedArtists({int limit = 20}) async {
+    try {
+      _recommendedArtists = await _spotify.getRecommendedArtists(limit: limit);
+      _error = null;
+    } catch (e) {
+      _error = 'Erro ao carregar artistas recomendados: $e';
+    } finally {
+      notifyListeners();
+    }
+  }
+
+  /// Carrega faixas em alta no Brasil
+  Future<void> loadTopTracks({int limit = 50}) async {
+    try {
+      _topTracks = await _spotify.getTopTracksBrazil(limit: limit);
+      _error = null;
+    } catch (e) {
+      _error = 'Erro ao carregar faixas em alta: $e';
+    } finally {
+      notifyListeners();
     }
   }
 
@@ -410,26 +438,17 @@ class MusicProvider with ChangeNotifier {
     required String name,
     String description = '',
     bool isPublic = true,
-    String? coverImagePath,
     required List<Track> tracks,
   }) async {
     _setLoading(true);
     try {
       final playlistId = DateTime.now().millisecondsSinceEpoch.toString();
       
-      // Processa a capa se fornecida
-      String? coverUrl;
-      if (coverImagePath != null) {
-        // Usa um prefixo especial para indicar que é um arquivo local
-        coverUrl = 'file://$coverImagePath';
-      }
-
       // Cria a playlist com as tracks
       final playlist = Playlist(
         id: playlistId,
         name: name,
         description: description.isEmpty ? null : description,
-        coverUrl: coverUrl,
         isPublic: isPublic,
         isLocal: true,
         tracks: tracks,
@@ -458,7 +477,6 @@ class MusicProvider with ChangeNotifier {
     required String name,
     String description = '',
     bool isPublic = true,
-    String? coverImagePath,
     required List<Track> tracks,
   }) async {
     _setLoading(true);
@@ -472,22 +490,12 @@ class MusicProvider with ChangeNotifier {
 
       final existingPlaylist = _localPlaylists[playlistIndex];
       
-      // Processa a capa se fornecida
-      String? coverUrl;
-      if (coverImagePath != null) {
-        // Usa um prefixo especial para indicar que é um arquivo local
-        coverUrl = 'file://$coverImagePath';
-      } else {
-        // Mantém a capa existente se não for fornecida uma nova
-        coverUrl = existingPlaylist.coverUrl;
-      }
-
       // Atualiza a playlist
       final updatedPlaylist = Playlist(
         id: playlistId,
         name: name,
         description: description.isEmpty ? null : description,
-        coverUrl: coverUrl,
+        coverUrl: existingPlaylist.isLocal ? null : existingPlaylist.coverUrl,
         isPublic: isPublic,
         isLocal: true,
         tracks: tracks,

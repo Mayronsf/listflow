@@ -1,18 +1,20 @@
-import 'dart:io';
-import 'package:flutter/material.dart';
 import 'dart:async';
-import 'package:provider/provider.dart';
+
 import 'package:cached_network_image/cached_network_image.dart';
-import '../providers/music_provider.dart';
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
 import '../models/track.dart';
-import '../widgets/track_tile.dart';
-import '../widgets/playlist_card.dart';
-import '../widgets/loading_widget.dart';
-import '../widgets/error_widget.dart';
+import '../providers/music_provider.dart';
 import '../widgets/empty_widget.dart';
-import 'playlist_detail_screen.dart';
+import '../widgets/error_widget.dart';
+import '../widgets/loading_widget.dart';
+import '../widgets/playlist_card.dart';
+import '../widgets/playlist_cover.dart';
+import '../widgets/track_tile.dart';
 import 'artist_profile_screen.dart';
 import 'create_playlist_screen.dart';
+import 'playlist_detail_screen.dart';
 
 /// Tela de busca
 class SearchScreen extends StatefulWidget {
@@ -394,49 +396,11 @@ class _SearchScreenState extends State<SearchScreen> with TickerProviderStateMix
                               final alreadyContains = playlist.containsTrack(track.id);
                               
                               return ListTile(
-                                leading: playlist.coverUrl != null
-                                    ? ClipRRect(
-                                        borderRadius: BorderRadius.circular(4),
-                                        child: playlist.coverUrl!.startsWith('file://')
-                                            ? Image.file(
-                                                File(playlist.coverUrl!.replaceFirst('file://', '')),
-                                                width: 50,
-                                                height: 50,
-                                                fit: BoxFit.cover,
-                                                errorBuilder: (context, error, stackTrace) {
-                                                  return Container(
-                                                    width: 50,
-                                                    height: 50,
-                                                    color: Colors.grey[300],
-                                                    child: const Icon(Icons.music_note),
-                                                  );
-                                                },
-                                              )
-                                            : CachedNetworkImage(
-                                                imageUrl: playlist.coverUrl!,
-                                                width: 50,
-                                                height: 50,
-                                                fit: BoxFit.cover,
-                                                placeholder: (context, url) => Container(
-                                                  width: 50,
-                                                  height: 50,
-                                                  color: Colors.grey[300],
-                                                  child: const Icon(Icons.music_note),
-                                                ),
-                                                errorWidget: (context, url, error) => Container(
-                                                  width: 50,
-                                                  height: 50,
-                                                  color: Colors.grey[300],
-                                                  child: const Icon(Icons.music_note),
-                                                ),
-                                              ),
-                                      )
-                                    : Container(
-                                        width: 50,
-                                        height: 50,
-                                        color: Colors.grey[300],
-                                        child: const Icon(Icons.music_note),
-                                      ),
+                                leading: PlaylistCover(
+                                  playlist: playlist,
+                                  size: 50,
+                                  borderRadius: 6,
+                                ),
                                 title: Text(playlist.name),
                                 subtitle: Text('${playlist.trackCount} faixas'),
                                 trailing: alreadyContains

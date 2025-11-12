@@ -1,11 +1,12 @@
 import 'dart:async';
-import 'dart:io';
+
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
-import '../models/track.dart';
+
 import '../models/playlist.dart';
+import '../models/track.dart';
 import '../providers/music_provider.dart';
+import '../widgets/playlist_cover.dart';
 
 class CreatePlaylistScreen extends StatefulWidget {
   final List<Track>? initialTracks;
@@ -27,7 +28,6 @@ class _CreatePlaylistScreenState extends State<CreatePlaylistScreen> {
   final _searchController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
 
-  File? _coverImage;
   bool _isPublic = true;
   late List<Track> _selectedTracks;
   List<Track> _searchResults = [];
@@ -45,16 +45,6 @@ class _CreatePlaylistScreenState extends State<CreatePlaylistScreen> {
       _descriptionController.text = widget.playlistToEdit!.description ?? '';
       _isPublic = widget.playlistToEdit!.isPublic;
       _selectedTracks = List<Track>.from(widget.playlistToEdit!.tracks);
-      
-      // Se a playlist tem uma capa local, carrega ela
-      if (widget.playlistToEdit!.coverUrl != null && 
-          widget.playlistToEdit!.coverUrl!.startsWith('file://')) {
-        final imagePath = widget.playlistToEdit!.coverUrl!.replaceFirst('file://', '');
-        final file = File(imagePath);
-        if (file.existsSync()) {
-          _coverImage = file;
-        }
-      }
     } else {
       _selectedTracks = widget.initialTracks ?? [];
     }
@@ -67,23 +57,6 @@ class _CreatePlaylistScreenState extends State<CreatePlaylistScreen> {
     _searchController.dispose();
     _debounce?.cancel();
     super.dispose();
-  }
-
-  Future<void> _pickCoverImage() async {
-    final picker = ImagePicker();
-    final picked = await picker.pickImage(
-      source: ImageSource.gallery,
-      imageQuality: 85,
-      maxWidth: 1600,
-      maxHeight: 1600,
-      // Garante que a imagem seja JPEG quando possível
-    );
-
-    if (picked != null) {
-      setState(() {
-        _coverImage = File(picked.path);
-      });
-    }
   }
 
   void _performSearch(String query) {
@@ -137,7 +110,6 @@ class _CreatePlaylistScreenState extends State<CreatePlaylistScreen> {
         name: _nameController.text.trim(),
         description: _descriptionController.text.trim(),
         isPublic: _isPublic,
-        coverImagePath: _coverImage?.path,
         tracks: _selectedTracks,
       );
     } else {
@@ -146,7 +118,6 @@ class _CreatePlaylistScreenState extends State<CreatePlaylistScreen> {
         name: _nameController.text.trim(),
         description: _descriptionController.text.trim(),
         isPublic: _isPublic,
-        coverImagePath: _coverImage?.path,
         tracks: _selectedTracks,
       );
     }
@@ -172,8 +143,33 @@ class _CreatePlaylistScreenState extends State<CreatePlaylistScreen> {
     }
   }
 
+  Playlist _buildPreviewPlaylist() {
+    final base = widget.playlistToEdit;
+    final name = _nameController.text.trim().isEmpty
+        ? (base?.name ?? 'Nova Playlist')
+        : _nameController.text.trim();
+    final description = _descriptionController.text.trim().isEmpty
+        ? base?.description
+        : _descriptionController.text.trim();
+
+    return Playlist(
+      id: base?.id ?? 'preview',
+      name: name,
+      description: description,
+      coverUrl: base != null && !base.isLocal ? base.coverUrl : null,
+      creatorId: base?.creatorId,
+      creatorName: base?.creatorName,
+      tracks: _selectedTracks,
+      createdAt: base?.createdAt ?? DateTime.now(),
+      isPublic: _isPublic,
+      isLocal: true,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final previewPlaylist = _buildPreviewPlaylist();
+
     return Scaffold(
       appBar: AppBar(
         title: Text(_isEditing ? 'Editar Playlist' : 'Criar Playlist'),
@@ -194,38 +190,24 @@ class _CreatePlaylistScreenState extends State<CreatePlaylistScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Cover Image
+              // Pré-visualização da capa gerada automaticamente
               Center(
-                child: GestureDetector(
-                  onTap: _pickCoverImage,
-                  child: Container(
-                    width: 200,
-                    height: 200,
-                    decoration: BoxDecoration(
-                      color: Colors.grey[300],
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.grey, width: 2),
+                child: Column(
+                  children: [
+                    PlaylistCover(
+                      playlist: previewPlaylist,
+                      size: 200,
+                      borderRadius: 12,
                     ),
-                    child: _coverImage != null
-                        ? ClipRRect(
-                            borderRadius: BorderRadius.circular(10),
-                            child: Image.file(
-                              _coverImage!,
-                              fit: BoxFit.cover,
-                            ),
-                          )
-                        : Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(Icons.add_photo_alternate, size: 48, color: Colors.grey[600]),
-                              const SizedBox(height: 8),
-                              Text(
-                                'Adicionar capa',
-                                style: TextStyle(color: Colors.grey[600]),
-                              ),
-                            ],
+                    const SizedBox(height: 12),
+                    Text(
+                      'A capa usa as capas das primeiras músicas da playlist.',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: Colors.grey[600],
                           ),
-                  ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
                 ),
               ),
               const SizedBox(height: 24),
@@ -238,6 +220,7 @@ class _CreatePlaylistScreenState extends State<CreatePlaylistScreen> {
                   border: OutlineInputBorder(),
                   prefixIcon: Icon(Icons.music_note),
                 ),
+                onChanged: (_) => setState(() {}),
                 validator: (value) {
                   if (value == null || value.trim().isEmpty) {
                     return 'Digite um nome para a playlist';
@@ -256,6 +239,7 @@ class _CreatePlaylistScreenState extends State<CreatePlaylistScreen> {
                   prefixIcon: Icon(Icons.description),
                 ),
                 maxLines: 3,
+                onChanged: (_) => setState(() {}),
               ),
               const SizedBox(height: 16),
 

@@ -1,14 +1,16 @@
-import 'dart:io';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:cached_network_image/cached_network_image.dart';
+import 'package:url_launcher/url_launcher.dart';
+
 import '../models/artist.dart';
 import '../models/track.dart';
 import '../providers/music_provider.dart';
-import '../widgets/track_tile.dart';
-import '../widgets/loading_widget.dart';
-import '../widgets/error_widget.dart';
 import '../widgets/empty_widget.dart';
+import '../widgets/error_widget.dart';
+import '../widgets/loading_widget.dart';
+import '../widgets/playlist_cover.dart';
+import '../widgets/track_tile.dart';
 import 'create_playlist_screen.dart';
 
 /// Tela de perfil do artista
@@ -42,9 +44,10 @@ class _ArtistProfileScreenState extends State<ArtistProfileScreen> {
           if (widget.artist.spotifyUrl != null)
             IconButton(
               onPressed: () async {
-                // Abrir no Spotify se disponível
+                await _launchSpotifyUrl(widget.artist.spotifyUrl!);
               },
               icon: const Icon(Icons.open_in_new),
+              tooltip: 'Abrir no Spotify',
             ),
         ],
       ),
@@ -277,49 +280,11 @@ class _ArtistProfileScreenState extends State<ArtistProfileScreen> {
                               final alreadyContains = playlist.containsTrack(track.id);
                               
                               return ListTile(
-                                leading: playlist.coverUrl != null
-                                    ? ClipRRect(
-                                        borderRadius: BorderRadius.circular(4),
-                                        child: playlist.coverUrl!.startsWith('file://')
-                                            ? Image.file(
-                                                File(playlist.coverUrl!.replaceFirst('file://', '')),
-                                                width: 50,
-                                                height: 50,
-                                                fit: BoxFit.cover,
-                                                errorBuilder: (context, error, stackTrace) {
-                                                  return Container(
-                                                    width: 50,
-                                                    height: 50,
-                                                    color: Colors.grey[300],
-                                                    child: const Icon(Icons.music_note),
-                                                  );
-                                                },
-                                              )
-                                            : CachedNetworkImage(
-                                                imageUrl: playlist.coverUrl!,
-                                                width: 50,
-                                                height: 50,
-                                                fit: BoxFit.cover,
-                                                placeholder: (context, url) => Container(
-                                                  width: 50,
-                                                  height: 50,
-                                                  color: Colors.grey[300],
-                                                  child: const Icon(Icons.music_note),
-                                                ),
-                                                errorWidget: (context, url, error) => Container(
-                                                  width: 50,
-                                                  height: 50,
-                                                  color: Colors.grey[300],
-                                                  child: const Icon(Icons.music_note),
-                                                ),
-                                              ),
-                                      )
-                                    : Container(
-                                        width: 50,
-                                        height: 50,
-                                        color: Colors.grey[300],
-                                        child: const Icon(Icons.music_note),
-                                      ),
+                                leading: PlaylistCover(
+                                  playlist: playlist,
+                                  size: 50,
+                                  borderRadius: 6,
+                                ),
                                 title: Text(playlist.name),
                                 subtitle: Text('${playlist.trackCount} faixas'),
                                 trailing: alreadyContains
@@ -381,6 +346,37 @@ class _ArtistProfileScreenState extends State<ArtistProfileScreen> {
         },
       ),
     );
+  }
+
+  /// Abre o link do Spotify do artista
+  Future<void> _launchSpotifyUrl(String url) async {
+    try {
+      final uri = Uri.parse(url);
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(
+          uri,
+          mode: LaunchMode.externalApplication,
+        );
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Não foi possível abrir o link do Spotify'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erro ao abrir link: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 }
 

@@ -182,6 +182,204 @@ class SpotifyService {
     return [];
   }
 
+  // Busca artistas recomendados/populares
+  Future<List<Artist>> getRecommendedArtists({int limit = 20}) async {
+    final appToken = await _getAppAccessToken();
+    if (appToken == null) return [];
+    
+    final List<Artist> allArtists = [];
+    final Set<String> seenIds = {};
+    
+    // Busca artistas populares usando termos de busca comuns
+    // A API do Spotify retorna artistas mais populares primeiro
+    final popularSearchTerms = [
+      'year:2024',  // Artistas populares recentes
+      'tag:new',    // Artistas novos
+      'a',          // Busca ampla que retorna artistas populares
+    ];
+    
+    for (final term in popularSearchTerms) {
+      try {
+        final resp = await _client
+            .get(
+              Uri.parse('$_baseUrl/search?q=${Uri.encodeComponent(term)}&type=artist&limit=20&market=BR'),
+              headers: _authHeaders(appToken),
+            )
+            .timeout(_timeout);
+        
+        if (resp.statusCode == 200) {
+          final data = json.decode(resp.body);
+          final items = (data['artists']?['items'] as List?) ?? [];
+          
+          for (final item in items) {
+            final artistId = item['id'] as String?;
+            if (artistId != null && !seenIds.contains(artistId)) {
+              seenIds.add(artistId);
+              allArtists.add(artistFromSpotifyJson(item));
+              if (allArtists.length >= limit) break;
+            }
+          }
+          
+          if (allArtists.length >= limit) break;
+        }
+      } catch (e) {
+        // Continua com o próximo termo se houver erro
+        continue;
+      }
+    }
+    
+    // Se ainda não tem artistas suficientes, busca por letras comuns
+    if (allArtists.length < limit) {
+      final commonLetters = ['a', 'e', 'i', 'o', 'u'];
+      for (final letter in commonLetters) {
+        try {
+          final resp = await _client
+              .get(
+                Uri.parse('$_baseUrl/search?q=$letter&type=artist&limit=20&market=BR'),
+                headers: _authHeaders(appToken),
+              )
+              .timeout(_timeout);
+          
+          if (resp.statusCode == 200) {
+            final data = json.decode(resp.body);
+            final items = (data['artists']?['items'] as List?) ?? [];
+            
+            for (final item in items) {
+              final artistId = item['id'] as String?;
+              if (artistId != null && !seenIds.contains(artistId)) {
+                seenIds.add(artistId);
+                allArtists.add(artistFromSpotifyJson(item));
+                if (allArtists.length >= limit) break;
+              }
+            }
+            
+            if (allArtists.length >= limit) break;
+          }
+        } catch (e) {
+          continue;
+        }
+      }
+    }
+    
+    return allArtists.take(limit).toList();
+  }
+
+  // Busca faixas em alta no Brasil (Top 50 Brasil)
+  Future<List<Track>> getTopTracksBrazil({int limit = 50}) async {
+    final appToken = await _getAppAccessToken();
+    if (appToken == null) return [];
+    
+    try {
+      // Tenta buscar a playlist oficial "Top 50 - Brasil" do Spotify
+      // O Spotify mantém playlists oficiais com o formato "Top 50 - [País]"
+      final searchTerms = [
+        'Top 50 - Brasil',
+        'Top 50 Brasil',
+        '37i9dQZEVXbMXbN3EUUhlg', // ID conhecido da playlist Top 50 Brasil (pode variar)
+      ];
+      
+      String? playlistId;
+      
+      // Primeiro tenta usar o ID conhecido
+      try {
+        final testResp = await _client
+            .get(
+              Uri.parse('$_baseUrl/playlists/37i9dQZEVXbMXbN3EUUhlg?market=BR'),
+              headers: _authHeaders(appToken),
+            )
+            .timeout(_timeout);
+        
+        if (testResp.statusCode == 200) {
+          playlistId = '37i9dQZEVXbMXbN3EUUhlg';
+        }
+      } catch (e) {
+        // Se falhar, tenta buscar por nome
+      }
+      
+      // Se não encontrou pelo ID, busca por nome
+      if (playlistId == null) {
+        for (final term in searchTerms.take(2)) {
+          try {
+            final searchResp = await _client
+                .get(
+                  Uri.parse('$_baseUrl/search?q=${Uri.encodeComponent(term)}&type=playlist&limit=5&market=BR'),
+                  headers: _authHeaders(appToken),
+                )
+                .timeout(_timeout);
+            
+            if (searchResp.statusCode == 200) {
+              final searchData = json.decode(searchResp.body);
+              final playlists = (searchData['playlists']?['items'] as List?) ?? [];
+              
+              // Procura pela playlist oficial do Spotify (geralmente tem "spotify" como owner)
+              for (final playlist in playlists) {
+                final owner = playlist['owner'];
+                if (owner != null && (owner['id'] == 'spotify' || (owner['display_name']?.toString().toLowerCase().contains('spotify') ?? false))) {
+                  playlistId = playlist['id'] as String?;
+                  if (playlistId != null) break;
+                }
+              }
+              
+              // Se não encontrou oficial, pega a primeira
+              if (playlistId == null && playlists.isNotEmpty) {
+                playlistId = playlists.first['id'] as String?;
+              }
+              
+              if (playlistId != null) break;
+            }
+          } catch (e) {
+            continue;
+          }
+        }
+      }
+      
+      // Se encontrou a playlist, busca as faixas
+      if (playlistId != null) {
+        final tracksResp = await _client
+            .get(
+              Uri.parse('$_baseUrl/playlists/$playlistId/tracks?limit=$limit&market=BR'),
+              headers: _authHeaders(appToken),
+            )
+            .timeout(_timeout);
+        
+        if (tracksResp.statusCode == 200) {
+          final tracksData = json.decode(tracksResp.body);
+          final items = (tracksData['items'] as List?) ?? [];
+          
+          final List<Track> tracks = [];
+          for (final item in items) {
+            final trackData = item['track'];
+            if (trackData != null && trackData is Map) {
+              tracks.add(trackFromSpotifyJson(Map<String, dynamic>.from(trackData)));
+            }
+          }
+          
+          if (tracks.isNotEmpty) {
+            return tracks.take(limit).toList();
+          }
+        }
+      }
+      
+      // Fallback: busca músicas populares recentes
+      final fallbackResp = await _client
+          .get(
+            Uri.parse('$_baseUrl/search?q=year:2024&type=track&limit=$limit&market=BR'),
+            headers: _authHeaders(appToken),
+          )
+          .timeout(_timeout);
+      
+      if (fallbackResp.statusCode == 200) {
+        final fallbackData = json.decode(fallbackResp.body);
+        final items = (fallbackData['tracks']?['items'] as List?) ?? [];
+        return items.map((t) => trackFromSpotifyJson(t)).toList().cast<Track>().take(limit).toList();
+      }
+    } catch (e) {
+      // Em caso de erro, retorna lista vazia
+      return [];
+    }
+    
+    return [];
+  }
 
   void dispose() {
     _client.close();

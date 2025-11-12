@@ -1,13 +1,13 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:cached_network_image/cached_network_image.dart';
+
 import '../models/playlist.dart';
 import '../providers/music_provider.dart';
-import '../widgets/track_tile.dart';
-import '../widgets/loading_widget.dart';
-import '../widgets/error_widget.dart';
 import '../widgets/empty_widget.dart';
+import '../widgets/error_widget.dart';
+import '../widgets/loading_widget.dart';
+import '../widgets/playlist_cover.dart';
+import '../widgets/track_tile.dart';
 import 'create_playlist_screen.dart';
 
 /// Tela de detalhes de uma playlist
@@ -74,54 +74,11 @@ class _PlaylistDetailScreenState extends State<PlaylistDetailScreen> {
                 padding: const EdgeInsets.all(16),
                 child: Column(
                   children: [
-                    // Capa da playlist
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(12),
-                      child: Container(
-                        width: 200,
-                        height: 200,
-                        decoration: BoxDecoration(
-                          color: Colors.grey[300],
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: widget.playlist.coverUrl != null
-                            ? (widget.playlist.coverUrl!.startsWith('file://')
-                                ? Image.file(
-                                    File(widget.playlist.coverUrl!.replaceFirst('file://', '')),
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (context, error, stackTrace) {
-                                      return const Icon(
-                                        Icons.music_note,
-                                        size: 80,
-                                        color: Colors.grey,
-                                      );
-                                    },
-                                  )
-                                : widget.playlist.coverUrl!.startsWith('asset://')
-                                    ? Image.asset(
-                                        widget.playlist.coverUrl!.replaceFirst('asset://', ''),
-                                        fit: BoxFit.cover,
-                                      )
-                                    : CachedNetworkImage(
-                                        imageUrl: widget.playlist.coverUrl!,
-                                        fit: BoxFit.cover,
-                                        placeholder: (context, url) => const Icon(
-                                          Icons.music_note,
-                                          size: 80,
-                                          color: Colors.grey,
-                                        ),
-                                        errorWidget: (context, url, error) => const Icon(
-                                          Icons.music_note,
-                                          size: 80,
-                                          color: Colors.grey,
-                                        ),
-                                      ))
-                            : const Icon(
-                                Icons.music_note,
-                                size: 80,
-                                color: Colors.grey,
-                              ),
-                      ),
+                    // Capa da playlist gerada automaticamente
+                    PlaylistCover(
+                      playlist: widget.playlist,
+                      size: 200,
+                      borderRadius: 12,
                     ),
                     const SizedBox(height: 16),
                     

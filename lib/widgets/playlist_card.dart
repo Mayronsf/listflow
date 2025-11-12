@@ -1,7 +1,7 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:cached_network_image/cached_network_image.dart';
+
 import '../models/playlist.dart';
+import 'playlist_cover.dart';
 
 /// Card para exibir uma playlist
 class PlaylistCard extends StatelessWidget {
@@ -30,64 +30,7 @@ class PlaylistCard extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             // Capa da playlist
-            ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: Container(
-                width: 150,
-                height: 150,
-                decoration: BoxDecoration(
-                  color: Colors.grey[300],
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: playlist.coverUrl != null
-                    ? (playlist.coverUrl!.startsWith('asset://')
-                        ? Image.asset(
-                            playlist.coverUrl!.replaceFirst('asset://', ''),
-                            fit: BoxFit.cover,
-                          )
-                        : playlist.coverUrl!.startsWith('file://')
-                            ? Image.file(
-                                File(playlist.coverUrl!.replaceFirst('file://', '')),
-                                fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) => Container(
-                                  color: Colors.grey[300],
-                                  child: const Icon(
-                                    Icons.music_note,
-                                    size: 50,
-                                    color: Colors.grey,
-                                  ),
-                                ),
-                              )
-                            : CachedNetworkImage(
-                                imageUrl: playlist.coverUrl!,
-                                fit: BoxFit.cover,
-                                placeholder: (context, url) => Container(
-                                  color: Colors.grey[300],
-                                  child: const Icon(
-                                    Icons.music_note,
-                                    size: 50,
-                                    color: Colors.grey,
-                                  ),
-                                ),
-                                errorWidget: (context, url, error) => Container(
-                                  color: Colors.grey[300],
-                                  child: const Icon(
-                                    Icons.music_note,
-                                    size: 50,
-                                    color: Colors.grey,
-                                  ),
-                                ),
-                              ))
-                    : Container(
-                        color: Colors.grey[300],
-                        child: const Icon(
-                          Icons.music_note,
-                          size: 50,
-                          color: Colors.grey,
-                        ),
-                      ),
-              ),
-            ),
+            PlaylistCover(playlist: playlist, size: 150),
             const SizedBox(height: 6),
             
             // Título da playlist
