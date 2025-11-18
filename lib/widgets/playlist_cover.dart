@@ -6,7 +6,6 @@ import 'package:flutter/material.dart';
 
 import '../models/playlist.dart';
 
-/// Widget responsável por gerar a capa visual de uma playlist a partir das faixas.
 class PlaylistCover extends StatelessWidget {
   final Playlist playlist;
   final double size;
@@ -23,9 +22,8 @@ class PlaylistCover extends StatelessWidget {
   Widget build(BuildContext context) {
     final uniqueTrackCovers = _extractDistinctTrackCovers();
 
-    // Quando não há capas de faixas disponíveis, tenta usar a capa da playlist (caso remoto).
-    if (uniqueTrackCovers.isEmpty && playlist.coverUrl != null) {
-      return _buildSingleImage(playlist.coverUrl!);
+    if (uniqueTrackCovers.isEmpty && playlist.urlCapa != null) {
+      return _buildSingleImage(playlist.urlCapa!);
     }
 
     if (uniqueTrackCovers.isEmpty) {
@@ -48,8 +46,8 @@ class PlaylistCover extends StatelessWidget {
     final seen = <String>{};
     final covers = <String>[];
 
-    for (final track in playlist.tracks) {
-      final url = track.coverUrl;
+    for (final track in playlist.faixas) {
+      final url = track.urlCapa;
       if (url != null && url.isNotEmpty && seen.add(url)) {
         covers.add(url);
         if (covers.length == 4) {
@@ -165,7 +163,6 @@ class PlaylistCover extends StatelessWidget {
     if (url.startsWith('file://')) {
       final filePath = url.replaceFirst('file://', '');
       if (kIsWeb) {
-        // Web não suporta File, então exibe fallback.
         return _buildFallback();
       }
       final file = File(filePath);

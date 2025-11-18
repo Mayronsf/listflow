@@ -16,7 +16,6 @@ import 'artist_profile_screen.dart';
 import 'create_playlist_screen.dart';
 import 'playlist_detail_screen.dart';
 
-/// Tela de busca
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
 
@@ -214,21 +213,21 @@ class _SearchScreenState extends State<SearchScreen> with TickerProviderStateMix
                 leading: CircleAvatar(
                   radius: 30,
                   backgroundColor: Colors.grey[300],
-                  backgroundImage: artist.coverUrl != null
-                      ? CachedNetworkImageProvider(artist.coverUrl!)
+                  backgroundImage: artist.urlCapa != null
+                      ? CachedNetworkImageProvider(artist.urlCapa!)
                       : null,
-                  child: artist.coverUrl == null
+                  child: artist.urlCapa == null
                       ? const Icon(Icons.person, size: 30)
                       : null,
                 ),
                 title: Text(
-                  artist.name,
+                  artist.nome,
                   style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
-                subtitle: artist.genres.isNotEmpty
-                    ? Text(artist.genres.take(3).join(', '))
-                    : artist.followers != null
-                        ? Text('${_formatFollowers(artist.followers!)} seguidores')
+                subtitle: artist.generos.isNotEmpty
+                    ? Text(artist.generos.take(3).join(', '))
+                    : artist.seguidores != null
+                        ? Text('${_formatFollowers(artist.seguidores!)} seguidores')
                         : null,
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () {
@@ -334,7 +333,6 @@ class _SearchScreenState extends State<SearchScreen> with TickerProviderStateMix
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // Cabeçalho
                   Padding(
                     padding: const EdgeInsets.all(16),
                     child: Row(
@@ -356,7 +354,6 @@ class _SearchScreenState extends State<SearchScreen> with TickerProviderStateMix
                   ),
                   const Divider(),
                   
-                  // Lista de playlists
                   Flexible(
                     child: musicProvider.localPlaylists.isEmpty
                         ? Padding(
@@ -393,7 +390,7 @@ class _SearchScreenState extends State<SearchScreen> with TickerProviderStateMix
                             itemCount: musicProvider.localPlaylists.length,
                             itemBuilder: (context, index) {
                               final playlist = musicProvider.localPlaylists[index];
-                              final alreadyContains = playlist.containsTrack(track.id);
+                              final alreadyContains = playlist.contemFaixa(track.id);
                               
                               return ListTile(
                                 leading: PlaylistCover(
@@ -401,8 +398,8 @@ class _SearchScreenState extends State<SearchScreen> with TickerProviderStateMix
                                   size: 50,
                                   borderRadius: 6,
                                 ),
-                                title: Text(playlist.name),
-                                subtitle: Text('${playlist.trackCount} faixas'),
+                                title: Text(playlist.nome),
+                                subtitle: Text('${playlist.quantidadeFaixas} faixas'),
                                 trailing: alreadyContains
                                     ? const Icon(Icons.check, color: Colors.green)
                                     : const Icon(Icons.add),
@@ -417,7 +414,7 @@ class _SearchScreenState extends State<SearchScreen> with TickerProviderStateMix
                                           Navigator.pop(context);
                                           ScaffoldMessenger.of(context).showSnackBar(
                                             SnackBar(
-                                              content: Text('Música adicionada à ${playlist.name}'),
+                                              content: Text('Música adicionada à ${playlist.nome}'),
                                               backgroundColor: Colors.green,
                                             ),
                                           );
@@ -430,7 +427,6 @@ class _SearchScreenState extends State<SearchScreen> with TickerProviderStateMix
                   
                   const Divider(),
                   
-                  // Botão para criar nova playlist
                   Padding(
                     padding: const EdgeInsets.all(16),
                     child: SizedBox(

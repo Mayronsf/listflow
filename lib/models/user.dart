@@ -1,121 +1,113 @@
-/// Modelo para representar um usuário
 class User {
   final String id;
-  final String name;
+  final String nome;
   final String? email;
-  final String? avatarUrl;
+  final String? urlAvatar;
   final String? bio;
-  final List<String> favoriteTrackIds;
-  final List<String> localPlaylistIds;
-  final bool isDarkMode;
+  final List<String> idsFaixasFavoritas;
+  final List<String> idsPlaylistsLocais;
+  final bool ehModoEscuro;
 
   User({
     required this.id,
-    required this.name,
+    required this.nome,
     this.email,
-    this.avatarUrl,
+    this.urlAvatar,
     this.bio,
-    this.favoriteTrackIds = const [],
-    this.localPlaylistIds = const [],
-    this.isDarkMode = true,
+    this.idsFaixasFavoritas = const [],
+    this.idsPlaylistsLocais = const [],
+    this.ehModoEscuro = true,
   });
 
-  factory User.fromJson(Map<String, dynamic> json) {
+  factory User.deJson(Map<String, dynamic> json) {
     return User(
       id: json['id'] ?? '',
-      name: json['name'] ?? 'Usuário',
+      nome: json['name'] ?? 'Usuário',
       email: json['email'],
-      avatarUrl: json['avatarUrl'],
+      urlAvatar: json['avatarUrl'],
       bio: json['bio'],
-      favoriteTrackIds: List<String>.from(json['favoriteTrackIds'] ?? []),
-      localPlaylistIds: List<String>.from(json['localPlaylistIds'] ?? []),
-      isDarkMode: json['isDarkMode'] ?? true,
+      idsFaixasFavoritas: List<String>.from(json['favoriteTrackIds'] ?? []),
+      idsPlaylistsLocais: List<String>.from(json['localPlaylistIds'] ?? []),
+      ehModoEscuro: json['isDarkMode'] ?? true,
     );
   }
 
-  Map<String, dynamic> toJson() {
+  Map<String, dynamic> paraJson() {
     return {
       'id': id,
-      'name': name,
+      'name': nome,
       'email': email,
-      'avatarUrl': avatarUrl,
+      'avatarUrl': urlAvatar,
       'bio': bio,
-      'favoriteTrackIds': favoriteTrackIds,
-      'localPlaylistIds': localPlaylistIds,
-      'isDarkMode': isDarkMode,
+      'favoriteTrackIds': idsFaixasFavoritas,
+      'localPlaylistIds': idsPlaylistsLocais,
+      'isDarkMode': ehModoEscuro,
     };
   }
 
-  User copyWith({
+  User copiarCom({
     String? id,
-    String? name,
+    String? nome,
     String? email,
-    String? avatarUrl,
+    String? urlAvatar,
     String? bio,
-    List<String>? favoriteTrackIds,
-    List<String>? localPlaylistIds,
-    bool? isDarkMode,
+    List<String>? idsFaixasFavoritas,
+    List<String>? idsPlaylistsLocais,
+    bool? ehModoEscuro,
   }) {
     return User(
       id: id ?? this.id,
-      name: name ?? this.name,
+      nome: nome ?? this.nome,
       email: email ?? this.email,
-      avatarUrl: avatarUrl ?? this.avatarUrl,
+      urlAvatar: urlAvatar ?? this.urlAvatar,
       bio: bio ?? this.bio,
-      favoriteTrackIds: favoriteTrackIds ?? this.favoriteTrackIds,
-      localPlaylistIds: localPlaylistIds ?? this.localPlaylistIds,
-      isDarkMode: isDarkMode ?? this.isDarkMode,
+      idsFaixasFavoritas: idsFaixasFavoritas ?? this.idsFaixasFavoritas,
+      idsPlaylistsLocais: idsPlaylistsLocais ?? this.idsPlaylistsLocais,
+      ehModoEscuro: ehModoEscuro ?? this.ehModoEscuro,
     );
   }
 
-  /// Adiciona uma faixa aos favoritos
-  User addFavorite(String trackId) {
-    if (favoriteTrackIds.contains(trackId)) {
+  User adicionarFavorito(String idFaixa) {
+    if (idsFaixasFavoritas.contains(idFaixa)) {
       return this;
     }
-    return copyWith(favoriteTrackIds: [...favoriteTrackIds, trackId]);
+    return copiarCom(idsFaixasFavoritas: [...idsFaixasFavoritas, idFaixa]);
   }
 
-  /// Remove uma faixa dos favoritos
-  User removeFavorite(String trackId) {
-    return copyWith(
-      favoriteTrackIds: favoriteTrackIds.where((id) => id != trackId).toList(),
+  User removerFavorito(String idFaixa) {
+    return copiarCom(
+      idsFaixasFavoritas: idsFaixasFavoritas.where((id) => id != idFaixa).toList(),
     );
   }
 
-  /// Verifica se uma faixa está nos favoritos
-  bool isFavorite(String trackId) {
-    return favoriteTrackIds.contains(trackId);
+  bool ehFavorito(String idFaixa) {
+    return idsFaixasFavoritas.contains(idFaixa);
   }
 
-  /// Adiciona uma playlist local
-  User addLocalPlaylist(String playlistId) {
-    if (localPlaylistIds.contains(playlistId)) {
+  User adicionarPlaylistLocal(String idPlaylist) {
+    if (idsPlaylistsLocais.contains(idPlaylist)) {
       return this;
     }
-    return copyWith(localPlaylistIds: [...localPlaylistIds, playlistId]);
+    return copiarCom(idsPlaylistsLocais: [...idsPlaylistsLocais, idPlaylist]);
   }
 
-  /// Remove uma playlist local
-  User removeLocalPlaylist(String playlistId) {
-    return copyWith(
-      localPlaylistIds: localPlaylistIds.where((id) => id != playlistId).toList(),
+  User removerPlaylistLocal(String idPlaylist) {
+    return copiarCom(
+      idsPlaylistsLocais: idsPlaylistsLocais.where((id) => id != idPlaylist).toList(),
     );
   }
 
-  /// Limpa todos os favoritos
-  User clearFavorites() {
-    return copyWith(favoriteTrackIds: []);
+  User limparFavoritos() {
+    return copiarCom(idsFaixasFavoritas: []);
   }
 
-  /// Limpa todas as playlists locais
-  User clearLocalPlaylists() {
-    return copyWith(localPlaylistIds: []);
+  User limparPlaylistsLocais() {
+    return copiarCom(idsPlaylistsLocais: []);
   }
 
   @override
   String toString() {
-    return 'User(id: $id, name: $name, favorites: ${favoriteTrackIds.length})';
+    return 'User(id: $id, nome: $nome, favoritos: ${idsFaixasFavoritas.length})';
   }
 
   @override

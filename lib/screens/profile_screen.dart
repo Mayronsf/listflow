@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/music_provider.dart';
 
-/// Tela de perfil do usuário
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
 
@@ -25,15 +24,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Informações do usuário
             _buildUserInfo(context),
             const SizedBox(height: 24),
             
-            // Estatísticas
             _buildStatsSection(context),
             const SizedBox(height: 24),
             
-            // Ações
             _buildActionsSection(context),
           ],
         ),

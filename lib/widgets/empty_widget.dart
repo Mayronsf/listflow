@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-/// Widget para exibir estado vazio
 class EmptyWidget extends StatelessWidget {
   final String message;
   final String? subtitle;

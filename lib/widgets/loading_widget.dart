@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
 
-/// Widget de carregamento com shimmer effect
 class LoadingWidget extends StatelessWidget {
   final double? width;
   final double? height;
@@ -31,7 +30,6 @@ class LoadingWidget extends StatelessWidget {
   }
 }
 
-/// Widget de carregamento para lista de playlists
 class PlaylistLoadingList extends StatelessWidget {
   const PlaylistLoadingList({super.key});
 
@@ -71,7 +69,6 @@ class PlaylistLoadingList extends StatelessWidget {
   }
 }
 
-/// Widget de carregamento para lista de faixas
 class TrackLoadingList extends StatelessWidget {
   const TrackLoadingList({super.key});
 
@@ -116,7 +113,6 @@ class TrackLoadingList extends StatelessWidget {
   }
 }
 
-/// Widget de carregamento centralizado
 class CenterLoadingWidget extends StatelessWidget {
   final String? message;
   

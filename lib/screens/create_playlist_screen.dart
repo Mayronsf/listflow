@@ -41,10 +41,10 @@ class _CreatePlaylistScreenState extends State<CreatePlaylistScreen> {
     _isEditing = widget.playlistToEdit != null;
     
     if (_isEditing && widget.playlistToEdit != null) {
-      _nameController.text = widget.playlistToEdit!.name;
-      _descriptionController.text = widget.playlistToEdit!.description ?? '';
-      _isPublic = widget.playlistToEdit!.isPublic;
-      _selectedTracks = List<Track>.from(widget.playlistToEdit!.tracks);
+      _nameController.text = widget.playlistToEdit!.nome;
+      _descriptionController.text = widget.playlistToEdit!.descricao ?? '';
+      _isPublic = widget.playlistToEdit!.ehPublica;
+      _selectedTracks = List<Track>.from(widget.playlistToEdit!.faixas);
     } else {
       _selectedTracks = widget.initialTracks ?? [];
     }
@@ -104,7 +104,6 @@ class _CreatePlaylistScreenState extends State<CreatePlaylistScreen> {
 
     bool success;
     if (_isEditing && widget.playlistToEdit != null) {
-      // Atualiza playlist existente
       success = await musicProvider.updateLocalPlaylistWithDetails(
         playlistId: widget.playlistToEdit!.id,
         name: _nameController.text.trim(),
@@ -113,7 +112,6 @@ class _CreatePlaylistScreenState extends State<CreatePlaylistScreen> {
         tracks: _selectedTracks,
       );
     } else {
-      // Cria nova playlist
       success = await musicProvider.createLocalPlaylistWithDetails(
         name: _nameController.text.trim(),
         description: _descriptionController.text.trim(),
@@ -146,23 +144,22 @@ class _CreatePlaylistScreenState extends State<CreatePlaylistScreen> {
   Playlist _buildPreviewPlaylist() {
     final base = widget.playlistToEdit;
     final name = _nameController.text.trim().isEmpty
-        ? (base?.name ?? 'Nova Playlist')
+        ? (base?.nome ?? 'Nova Playlist')
         : _nameController.text.trim();
     final description = _descriptionController.text.trim().isEmpty
-        ? base?.description
+        ? base?.descricao
         : _descriptionController.text.trim();
 
     return Playlist(
       id: base?.id ?? 'preview',
-      name: name,
-      description: description,
-      coverUrl: base != null && !base.isLocal ? base.coverUrl : null,
-      creatorId: base?.creatorId,
-      creatorName: base?.creatorName,
-      tracks: _selectedTracks,
-      createdAt: base?.createdAt ?? DateTime.now(),
-      isPublic: _isPublic,
-      isLocal: true,
+      nome: name,
+      descricao: description,
+      urlCapa: base != null && !base.ehLocal ? base.urlCapa : null,
+      nomeCriador: base?.nomeCriador,
+      faixas: _selectedTracks,
+      criadaEm: base?.criadaEm ?? DateTime.now(),
+      ehPublica: _isPublic,
+      ehLocal: true,
     );
   }
 
@@ -190,7 +187,6 @@ class _CreatePlaylistScreenState extends State<CreatePlaylistScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Pré-visualização da capa gerada automaticamente
               Center(
                 child: Column(
                   children: [
@@ -211,8 +207,6 @@ class _CreatePlaylistScreenState extends State<CreatePlaylistScreen> {
                 ),
               ),
               const SizedBox(height: 24),
-
-              // Name
               TextFormField(
                 controller: _nameController,
                 decoration: const InputDecoration(
@@ -229,8 +223,6 @@ class _CreatePlaylistScreenState extends State<CreatePlaylistScreen> {
                 },
               ),
               const SizedBox(height: 16),
-
-              // Description
               TextFormField(
                 controller: _descriptionController,
                 decoration: const InputDecoration(
@@ -242,8 +234,6 @@ class _CreatePlaylistScreenState extends State<CreatePlaylistScreen> {
                 onChanged: (_) => setState(() {}),
               ),
               const SizedBox(height: 16),
-
-              // Public/Private
               SwitchListTile(
                 title: const Text('Pública'),
                 subtitle: Text(_isPublic ? 'Qualquer pessoa pode ver' : 'Apenas você pode ver'),
@@ -255,8 +245,6 @@ class _CreatePlaylistScreenState extends State<CreatePlaylistScreen> {
                 },
               ),
               const SizedBox(height: 24),
-
-              // Selected Tracks Count
               if (_selectedTracks.isNotEmpty)
                 Padding(
                   padding: const EdgeInsets.only(bottom: 16),
@@ -275,8 +263,6 @@ class _CreatePlaylistScreenState extends State<CreatePlaylistScreen> {
                     ],
                   ),
                 ),
-
-              // Search Section
               const Divider(),
               const SizedBox(height: 16),
               Text(
@@ -309,8 +295,6 @@ class _CreatePlaylistScreenState extends State<CreatePlaylistScreen> {
                 onChanged: _performSearch,
               ),
               const SizedBox(height: 16),
-
-              // Search Results
               if (_isSearching)
                 const Padding(
                   padding: EdgeInsets.all(32.0),
@@ -334,8 +318,8 @@ class _CreatePlaylistScreenState extends State<CreatePlaylistScreen> {
                         value: isSelected,
                         onChanged: (_) => _toggleTrackSelection(track),
                       ),
-                      title: Text(track.title),
-                      subtitle: Text(track.artist),
+                      title: Text(track.titulo),
+                      subtitle: Text(track.artista),
                       trailing: Icon(
                         isSelected ? Icons.check_circle : Icons.add_circle_outline,
                         color: isSelected ? Theme.of(context).primaryColor : null,
@@ -344,8 +328,6 @@ class _CreatePlaylistScreenState extends State<CreatePlaylistScreen> {
                     ),
                   );
                 }),
-
-              // Selected Tracks List
               if (_selectedTracks.isNotEmpty) ...[
                 const SizedBox(height: 24),
                 const Divider(),
@@ -365,8 +347,8 @@ class _CreatePlaylistScreenState extends State<CreatePlaylistScreen> {
                         icon: const Icon(Icons.remove_circle, color: Colors.red),
                         onPressed: () => _toggleTrackSelection(track),
                       ),
-                      title: Text(track.title),
-                      subtitle: Text(track.artist),
+                      title: Text(track.titulo),
+                      subtitle: Text(track.artista),
                     ),
                   );
                 }),
@@ -380,4 +362,5 @@ class _CreatePlaylistScreenState extends State<CreatePlaylistScreen> {
     );
   }
 }
+
 

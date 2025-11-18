@@ -10,7 +10,6 @@ import '../widgets/playlist_cover.dart';
 import '../widgets/track_tile.dart';
 import 'create_playlist_screen.dart';
 
-/// Tela de detalhes de uma playlist
 class PlaylistDetailScreen extends StatefulWidget {
   final Playlist playlist;
 
@@ -37,12 +36,11 @@ class _PlaylistDetailScreenState extends State<PlaylistDetailScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          widget.playlist.name,
+          widget.playlist.nome,
           style: const TextStyle(fontSize: 18),
         ),
         actions: [
-          // Botão de editar apenas para playlists locais
-          if (widget.playlist.isLocal)
+          if (widget.playlist.ehLocal)
             IconButton(
               icon: const Icon(Icons.edit),
               onPressed: () async {
@@ -55,7 +53,6 @@ class _PlaylistDetailScreenState extends State<PlaylistDetailScreen> {
                   ),
                 );
                 
-                // Se a playlist foi editada, recarrega os dados
                 if (result == true && mounted) {
                   context.read<MusicProvider>().loadLocalData();
                   context.read<MusicProvider>().loadPlaylistTracks(widget.playlist.id);
@@ -69,12 +66,10 @@ class _PlaylistDetailScreenState extends State<PlaylistDetailScreen> {
         builder: (context, musicProvider, child) {
           return Column(
             children: [
-              // Cabeçalho da playlist
               Container(
                 padding: const EdgeInsets.all(16),
                 child: Column(
                   children: [
-                    // Capa da playlist gerada automaticamente
                     PlaylistCover(
                       playlist: widget.playlist,
                       size: 200,
@@ -82,9 +77,8 @@ class _PlaylistDetailScreenState extends State<PlaylistDetailScreen> {
                     ),
                     const SizedBox(height: 16),
                     
-                    // Título da playlist
                     Text(
-                      widget.playlist.name,
+                      widget.playlist.nome,
                       style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                         fontWeight: FontWeight.bold,
                       ),
@@ -92,10 +86,9 @@ class _PlaylistDetailScreenState extends State<PlaylistDetailScreen> {
                     ),
                     const SizedBox(height: 8),
                     
-                    // Informações da playlist
-                    if (widget.playlist.creatorName != null)
+                    if (widget.playlist.nomeCriador != null)
                       Text(
-                        'por ${widget.playlist.creatorName}',
+                        'por ${widget.playlist.nomeCriador}',
                         style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                           color: Colors.grey[600],
                         ),
@@ -104,7 +97,7 @@ class _PlaylistDetailScreenState extends State<PlaylistDetailScreen> {
                     const SizedBox(height: 8),
                     
                     Text(
-                      '${widget.playlist.isLocal ? widget.playlist.trackCount : musicProvider.currentPlaylistTracks.length} faixas',
+                      '${widget.playlist.ehLocal ? widget.playlist.quantidadeFaixas : musicProvider.currentPlaylistTracks.length} faixas',
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         color: Colors.grey[500],
                       ),
@@ -114,7 +107,6 @@ class _PlaylistDetailScreenState extends State<PlaylistDetailScreen> {
                 ),
               ),
               
-              // Lista de faixas
               Expanded(
                 child: _buildTracksList(musicProvider),
               ),
@@ -126,16 +118,15 @@ class _PlaylistDetailScreenState extends State<PlaylistDetailScreen> {
   }
 
   Widget _buildTracksList(MusicProvider musicProvider) {
-    // Se for uma playlist local, usa as tracks diretamente da playlist
-    final tracksToShow = widget.playlist.isLocal && widget.playlist.tracks.isNotEmpty
-        ? widget.playlist.tracks
+    final tracksToShow = widget.playlist.ehLocal && widget.playlist.faixas.isNotEmpty
+        ? widget.playlist.faixas
         : musicProvider.currentPlaylistTracks;
 
-    if (musicProvider.isLoading && !widget.playlist.isLocal) {
+    if (musicProvider.isLoading && !widget.playlist.ehLocal) {
       return const TrackLoadingList();
     }
 
-    if (musicProvider.error != null && !widget.playlist.isLocal) {
+    if (musicProvider.error != null && !widget.playlist.ehLocal) {
       return CustomErrorWidget(
         message: musicProvider.error!,
         onRetry: () {
@@ -161,7 +152,7 @@ class _PlaylistDetailScreenState extends State<PlaylistDetailScreen> {
         
         return Dismissible(
           key: Key('${track.id}_${widget.playlist.id}'),
-          direction: widget.playlist.isLocal 
+          direction: widget.playlist.ehLocal 
               ? DismissDirection.endToStart 
               : DismissDirection.none,
           background: Container(
@@ -173,7 +164,7 @@ class _PlaylistDetailScreenState extends State<PlaylistDetailScreen> {
               color: Colors.white,
             ),
           ),
-          onDismissed: widget.playlist.isLocal
+          onDismissed: widget.playlist.ehLocal
               ? (direction) {
                   musicProvider.removeTrackFromLocalPlaylist(
                     widget.playlist.id,
@@ -181,7 +172,7 @@ class _PlaylistDetailScreenState extends State<PlaylistDetailScreen> {
                   );
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text('${track.title} removida da playlist'),
+                      content: Text('${track.titulo} removida da playlist'),
                       action: SnackBarAction(
                         label: 'Desfazer',
                         onPressed: () {
@@ -228,7 +219,6 @@ class _PlaylistDetailScreenState extends State<PlaylistDetailScreen> {
           ElevatedButton(
             onPressed: () {
               Navigator.pop(context);
-              // Implementar adição à playlist
             },
             child: const Text('Adicionar'),
           ),

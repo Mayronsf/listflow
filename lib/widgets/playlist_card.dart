@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import '../models/playlist.dart';
 import 'playlist_cover.dart';
 
-/// Card para exibir uma playlist
 class PlaylistCard extends StatelessWidget {
   final Playlist playlist;
   final VoidCallback? onTap;
@@ -29,48 +28,41 @@ class PlaylistCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Capa da playlist
             PlaylistCover(playlist: playlist, size: 150),
-            const SizedBox(height: 6),
+            const SizedBox(height: 4),
             
-            // Título da playlist
             Text(
-              playlist.name,
+              playlist.nome,
               style: Theme.of(context).textTheme.titleSmall?.copyWith(
                 fontWeight: FontWeight.w600,
+                fontSize: 13,
               ),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
             ),
-            const SizedBox(height: 2),
             
-            // Informações adicionais
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (playlist.creatorName != null) ...[
-                  Text(
-                    'por ${playlist.creatorName}',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      fontSize: 11,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 1),
-                ],
-                Text(
-                  '${playlist.trackCount} faixas',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Colors.grey[600],
-                    fontSize: 11,
-                  ),
+            if (playlist.nomeCriador != null) ...[
+              const SizedBox(height: 4),
+              Text(
+                'por ${playlist.nomeCriador}',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  fontSize: 10,
                 ),
-              ],
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+            const SizedBox(height: 1),
+            Text(
+              '${playlist.quantidadeFaixas} faixas',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: Colors.grey[600],
+                fontSize: 10,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
             
-            // Botão de favoritar (se aplicável)
             if (showFavoriteButton && onFavorite != null) ...[
               const SizedBox(height: 4),
               IconButton(

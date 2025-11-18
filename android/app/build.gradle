@@ -43,7 +43,7 @@ android {
     }
 
     defaultConfig {
-        applicationId "com.example.openwhyd_music_app"
+        applicationId "com.listflow.music_app"
         minSdkVersion flutter.minSdkVersion
         targetSdkVersion flutter.targetSdkVersion
         versionCode flutterVersionCode.toInteger()

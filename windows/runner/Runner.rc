@@ -90,12 +90,12 @@ BEGIN
         BLOCK "040904e4"
         BEGIN
             VALUE "CompanyName", "com.example" "\0"
-            VALUE "FileDescription", "openwhyd_music_app" "\0"
+            VALUE "FileDescription", "listflow_music_app" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
-            VALUE "InternalName", "openwhyd_music_app" "\0"
+            VALUE "InternalName", "listflow_music_app" "\0"
             VALUE "LegalCopyright", "Copyright (C) 2025 com.example. All rights reserved." "\0"
-            VALUE "OriginalFilename", "openwhyd_music_app.exe" "\0"
-            VALUE "ProductName", "openwhyd_music_app" "\0"
+            VALUE "OriginalFilename", "listflow_music_app.exe" "\0"
+            VALUE "ProductName", "listflow_music_app" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END

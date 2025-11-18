@@ -1,122 +1,118 @@
 import 'track.dart';
 
-/// Modelo para representar uma playlist
 class Playlist {
   final String id;
-  final String name;
-  final String? description;
-  final String? coverUrl;
-  final String? creatorId;
-  final String? creatorName;
-  final List<Track> tracks;
-  final DateTime? createdAt;
-  final bool isPublic;
-  final bool isLocal; // Se foi criada localmente pelo usuário
+  final String nome;
+  final String? descricao;
+  final String? urlCapa;
+  final String? idCriador;
+  final String? nomeCriador;
+  final List<Track> faixas;
+  final DateTime? criadaEm;
+  final bool ehPublica;
+  final bool ehLocal;
 
   Playlist({
     required this.id,
-    required this.name,
-    this.description,
-    this.coverUrl,
-    this.creatorId,
-    this.creatorName,
-    this.tracks = const [],
-    this.createdAt,
-    this.isPublic = true,
-    this.isLocal = false,
+    required this.nome,
+    this.descricao,
+    this.urlCapa,
+    this.idCriador,
+    this.nomeCriador,
+    this.faixas = const [],
+    this.criadaEm,
+    this.ehPublica = true,
+    this.ehLocal = false,
   });
 
-  factory Playlist.fromJson(Map<String, dynamic> json) {
-    List<Track> tracksList = [];
+  factory Playlist.deJson(Map<String, dynamic> json) {
+    List<Track> listaFaixas = [];
     if (json['tracks'] != null) {
-      tracksList = (json['tracks'] as List)
-          .map((track) => Track.fromJson(track))
+      listaFaixas = (json['tracks'] as List)
+          .map((track) => Track.deJson(track))
           .toList();
     }
 
     return Playlist(
       id: json['_id'] ?? json['id'] ?? '',
-      name: json['name'] ?? 'Playlist sem nome',
-      description: json['description'],
-      coverUrl: json['img'] ?? json['coverUrl'],
-      creatorId: json['uId'] ?? json['creatorId'],
-      creatorName: json['uName'] ?? json['creatorName'],
-      tracks: tracksList,
-      createdAt: json['createdAt'] != null 
+      nome: json['name'] ?? 'Playlist sem nome',
+      descricao: json['description'],
+      urlCapa: json['img'] ?? json['coverUrl'],
+      idCriador: json['uId'] ?? json['creatorId'],
+      nomeCriador: json['uName'] ?? json['creatorName'],
+      faixas: listaFaixas,
+      criadaEm: json['createdAt'] != null 
           ? DateTime.tryParse(json['createdAt']) 
           : null,
-      isPublic: json['isPublic'] ?? true,
-      isLocal: json['isLocal'] ?? false,
+      ehPublica: json['isPublic'] ?? true,
+      ehLocal: json['isLocal'] ?? false,
     );
   }
 
-  Map<String, dynamic> toJson() {
+  Map<String, dynamic> paraJson() {
     return {
       'id': id,
-      'name': name,
-      'description': description,
-      'coverUrl': coverUrl,
-      'creatorId': creatorId,
-      'creatorName': creatorName,
-      'tracks': tracks.map((track) => track.toJson()).toList(),
-      'createdAt': createdAt?.toIso8601String(),
-      'isPublic': isPublic,
-      'isLocal': isLocal,
+      'name': nome,
+      'description': descricao,
+      'coverUrl': urlCapa,
+      'creatorId': idCriador,
+      'creatorName': nomeCriador,
+      'tracks': faixas.map((faixa) => faixa.paraJson()).toList(),
+      'createdAt': criadaEm?.toIso8601String(),
+      'isPublic': ehPublica,
+      'isLocal': ehLocal,
     };
   }
 
-  Playlist copyWith({
+  Playlist copiarCom({
     String? id,
-    String? name,
-    String? description,
-    String? coverUrl,
-    String? creatorId,
-    String? creatorName,
-    List<Track>? tracks,
-    DateTime? createdAt,
-    bool? isPublic,
-    bool? isLocal,
+    String? nome,
+    String? descricao,
+    String? urlCapa,
+    String? idCriador,
+    String? nomeCriador,
+    List<Track>? faixas,
+    DateTime? criadaEm,
+    bool? ehPublica,
+    bool? ehLocal,
   }) {
     return Playlist(
       id: id ?? this.id,
-      name: name ?? this.name,
-      description: description ?? this.description,
-      coverUrl: coverUrl ?? this.coverUrl,
-      creatorId: creatorId ?? this.creatorId,
-      creatorName: creatorName ?? this.creatorName,
-      tracks: tracks ?? this.tracks,
-      createdAt: createdAt ?? this.createdAt,
-      isPublic: isPublic ?? this.isPublic,
-      isLocal: isLocal ?? this.isLocal,
+      nome: nome ?? this.nome,
+      descricao: descricao ?? this.descricao,
+      urlCapa: urlCapa ?? this.urlCapa,
+      idCriador: idCriador ?? this.idCriador,
+      nomeCriador: nomeCriador ?? this.nomeCriador,
+      faixas: faixas ?? this.faixas,
+      criadaEm: criadaEm ?? this.criadaEm,
+      ehPublica: ehPublica ?? this.ehPublica,
+      ehLocal: ehLocal ?? this.ehLocal,
     );
   }
 
-  /// Adiciona uma faixa à playlist
-  Playlist addTrack(Track track) {
-    if (tracks.any((t) => t.id == track.id)) {
-      return this; // Faixa já existe
+
+  Playlist adicionarFaixa(Track faixa) {
+    if (faixas.any((f) => f.id == faixa.id)) {
+      return this;
     }
-    return copyWith(tracks: [...tracks, track]);
+    return copiarCom(faixas: [...faixas, faixa]);
   }
 
-  /// Remove uma faixa da playlist
-  Playlist removeTrack(String trackId) {
-    return copyWith(
-      tracks: tracks.where((track) => track.id != trackId).toList(),
+  Playlist removerFaixa(String idFaixa) {
+    return copiarCom(
+      faixas: faixas.where((faixa) => faixa.id != idFaixa).toList(),
     );
   }
 
-  /// Verifica se a playlist contém uma faixa específica
-  bool containsTrack(String trackId) {
-    return tracks.any((track) => track.id == trackId);
+  bool contemFaixa(String idFaixa) {
+    return faixas.any((faixa) => faixa.id == idFaixa);
   }
 
-  /// Retorna o número de faixas na playlist
-  int get trackCount => tracks.length;
+  int get quantidadeFaixas => faixas.length;
 
   @override
   String toString() {
-    return 'Playlist(id: $id, name: $name, trackCount: $trackCount)';
+    return 'Playlist(id: $id, nome: $nome, quantidadeFaixas: $quantidadeFaixas)';
   }
 
   @override

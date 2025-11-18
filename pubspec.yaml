@@ -1,5 +1,5 @@
-name: openwhyd_music_app
-description: Aplicativo de curadoria musical usando a API Openwhyd
+name: listflow_music_app
+description: Aplicativo de curadoria musical usando a API do Spotify
 
 publish_to: 'none'
 
@@ -31,8 +31,6 @@ dependencies:
   shimmer: ^3.0.0
   flutter_web_auth_2: ^3.0.2
   crypto: ^3.0.3
-  just_audio: ^0.9.36
-  audio_session: ^0.1.21
 
 dev_dependencies:
   flutter_test:

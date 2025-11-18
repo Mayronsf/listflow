@@ -2,7 +2,6 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import '../models/artist.dart';
 
-/// Widget para exibir um card de artista (estilo Spotify/Deezer)
 class ArtistCard extends StatelessWidget {
   final Artist artist;
   final VoidCallback? onTap;
@@ -25,7 +24,6 @@ class ArtistCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            // Foto do artista (circular)
             ClipOval(
               child: Container(
                 width: size,
@@ -34,9 +32,9 @@ class ArtistCard extends StatelessWidget {
                   color: Colors.grey[300],
                   shape: BoxShape.circle,
                 ),
-                child: artist.coverUrl != null
+                child: artist.urlCapa != null
                     ? CachedNetworkImage(
-                        imageUrl: artist.coverUrl!,
+                        imageUrl: artist.urlCapa!,
                         fit: BoxFit.cover,
                         placeholder: (context, url) => Container(
                           color: Colors.grey[300],
@@ -63,9 +61,8 @@ class ArtistCard extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 8),
-            // Nome do artista
             Text(
-              artist.name,
+              artist.nome,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     fontWeight: FontWeight.w600,
                     fontSize: 12,

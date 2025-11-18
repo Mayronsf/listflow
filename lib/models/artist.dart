@@ -1,50 +1,50 @@
-/// Modelo para representar um artista
+
 class Artist {
   final String id;
-  final String name;
-  final String? coverUrl;
-  final int? followers;
-  final List<String> genres;
-  final String? spotifyUrl;
+  final String nome;
+  final String? urlCapa;
+  final int? seguidores;
+  final List<String> generos;
+  final String? urlSpotify;
 
   Artist({
     required this.id,
-    required this.name,
-    this.coverUrl,
-    this.followers,
-    this.genres = const [],
-    this.spotifyUrl,
+    required this.nome,
+    this.urlCapa,
+    this.seguidores,
+    this.generos = const [],
+    this.urlSpotify,
   });
 
-  factory Artist.fromJson(Map<String, dynamic> json) {
+  factory Artist.deJson(Map<String, dynamic> json) {
     final images = (json['images'] as List?) ?? [];
     final cover = images.isNotEmpty ? images.first['url'] as String? : null;
-    final genres = (json['genres'] as List?)?.map((g) => g.toString()).toList() ?? [];
+    final generos = (json['genres'] as List?)?.map((g) => g.toString()).toList() ?? [];
     
     return Artist(
       id: json['id'] ?? '',
-      name: json['name'] ?? 'Artista desconhecido',
-      coverUrl: cover,
-      followers: json['followers']?['total'],
-      genres: genres,
-      spotifyUrl: json['external_urls']?['spotify'],
+      nome: json['name'] ?? 'Artista desconhecido',
+      urlCapa: cover,
+      seguidores: json['followers']?['total'],
+      generos: generos,
+      urlSpotify: json['external_urls']?['spotify'],
     );
   }
 
-  Map<String, dynamic> toJson() {
+  Map<String, dynamic> paraJson() {
     return {
       'id': id,
-      'name': name,
-      'coverUrl': coverUrl,
-      'followers': followers,
-      'genres': genres,
-      'spotifyUrl': spotifyUrl,
+      'name': nome,
+      'coverUrl': urlCapa,
+      'followers': seguidores,
+      'genres': generos,
+      'spotifyUrl': urlSpotify,
     };
   }
 
   @override
   String toString() {
-    return 'Artist(id: $id, name: $name)';
+    return 'Artist(id: $id, nome: $nome)';
   }
 
   @override

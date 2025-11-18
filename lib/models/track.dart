@@ -1,87 +1,86 @@
-/// Modelo para representar uma faixa musical
 class Track {
   final String id;
-  final String title;
-  final String artist;
-  final String? coverUrl;
-  final String? sourceUrl;
-  final String? previewUrl;
-  final String? sourceType; // youtube, soundcloud, etc.
-  final String? playlistId;
-  final DateTime? createdAt;
-  final bool isFavorite;
+  final String titulo;
+  final String artista;
+  final String? urlCapa;
+  final String? urlFonte;
+  final String? urlPrevia;
+  final String? tipoFonte;
+  final String? idPlaylist;
+  final DateTime? criadoEm;
+  final bool ehFavorito;
 
   Track({
     required this.id,
-    required this.title,
-    required this.artist,
-    this.coverUrl,
-    this.sourceUrl,
-    this.previewUrl,
-    this.sourceType,
-    this.playlistId,
-    this.createdAt,
-    this.isFavorite = false,
+    required this.titulo,
+    required this.artista,
+    this.urlCapa,
+    this.urlFonte,
+    this.urlPrevia,
+    this.tipoFonte,
+    this.idPlaylist,
+    this.criadoEm,
+    this.ehFavorito = false,
   });
 
-  factory Track.fromJson(Map<String, dynamic> json) {
+  factory Track.deJson(Map<String, dynamic> json) {
     return Track(
       id: json['_id'] ?? json['id'] ?? '',
-      title: json['name'] ?? json['title'] ?? 'Título desconhecido',
-      artist: json['author'] ?? json['artist'] ?? 'Artista desconhecido',
-      coverUrl: json['img'] ?? json['coverUrl'],
-      sourceUrl: json['url'] ?? json['sourceUrl'],
-      previewUrl: json['previewUrl'],
-      sourceType: json['sourceType'] ?? _extractSourceType(json['url']),
-      playlistId: json['playlistId'],
-      createdAt: json['createdAt'] != null 
+      titulo: json['name'] ?? json['title'] ?? 'Título desconhecido',
+      artista: json['author'] ?? json['artist'] ?? 'Artista desconhecido',
+      urlCapa: json['img'] ?? json['coverUrl'],
+      urlFonte: json['url'] ?? json['sourceUrl'],
+      urlPrevia: json['previewUrl'],
+      tipoFonte: json['sourceType'] ?? _extrairTipoFonte(json['url']),
+      idPlaylist: json['playlistId'],
+      criadoEm: json['createdAt'] != null 
           ? DateTime.tryParse(json['createdAt']) 
           : null,
     );
   }
 
-  Map<String, dynamic> toJson() {
+  Map<String, dynamic> paraJson() {
     return {
       'id': id,
-      'title': title,
-      'artist': artist,
-      'coverUrl': coverUrl,
-      'sourceUrl': sourceUrl,
-      'previewUrl': previewUrl,
-      'sourceType': sourceType,
-      'playlistId': playlistId,
-      'createdAt': createdAt?.toIso8601String(),
-      'isFavorite': isFavorite,
+      'title': titulo,
+      'artist': artista,
+      'coverUrl': urlCapa,
+      'sourceUrl': urlFonte,
+      'previewUrl': urlPrevia,
+      'sourceType': tipoFonte,
+      'playlistId': idPlaylist,
+      'createdAt': criadoEm?.toIso8601String(),
+      'isFavorite': ehFavorito,
     };
   }
 
-  Track copyWith({
+  Track copiarCom({
     String? id,
-    String? title,
-    String? artist,
-    String? coverUrl,
-    String? sourceUrl,
-    String? previewUrl,
-    String? sourceType,
-    String? playlistId,
-    DateTime? createdAt,
-    bool? isFavorite,
+    String? titulo,
+    String? artista,
+    String? urlCapa,
+    String? urlFonte,
+    String? urlPrevia,
+    String? tipoFonte,
+    String? idPlaylist,
+    DateTime? criadoEm,
+    bool? ehFavorito,
   }) {
     return Track(
       id: id ?? this.id,
-      title: title ?? this.title,
-      artist: artist ?? this.artist,
-      coverUrl: coverUrl ?? this.coverUrl,
-      sourceUrl: sourceUrl ?? this.sourceUrl,
-      previewUrl: previewUrl ?? this.previewUrl,
-      sourceType: sourceType ?? this.sourceType,
-      playlistId: playlistId ?? this.playlistId,
-      createdAt: createdAt ?? this.createdAt,
-      isFavorite: isFavorite ?? this.isFavorite,
+      titulo: titulo ?? this.titulo,
+      artista: artista ?? this.artista,
+      urlCapa: urlCapa ?? this.urlCapa,
+      urlFonte: urlFonte ?? this.urlFonte,
+      urlPrevia: urlPrevia ?? this.urlPrevia,
+      tipoFonte: tipoFonte ?? this.tipoFonte,
+      idPlaylist: idPlaylist ?? this.idPlaylist,
+      criadoEm: criadoEm ?? this.criadoEm,
+      ehFavorito: ehFavorito ?? this.ehFavorito,
     );
   }
 
-  static String? _extractSourceType(String? url) {
+  static String? _extrairTipoFonte(String? url) {
     if (url == null) return null;
     if (url.contains('youtube.com') || url.contains('youtu.be')) return 'youtube';
     if (url.contains('soundcloud.com')) return 'soundcloud';
@@ -91,7 +90,7 @@ class Track {
 
   @override
   String toString() {
-    return 'Track(id: $id, title: $title, artist: $artist)';
+    return 'Track(id: $id, titulo: $titulo, artista: $artista)';
   }
 
   @override

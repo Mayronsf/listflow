@@ -11,7 +11,6 @@ import 'playlist_detail_screen.dart';
 import 'artist_profile_screen.dart';
 import 'create_playlist_screen.dart';
 
-/// Tela inicial do aplicativo
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -72,7 +71,6 @@ class _HomeScreenState extends State<HomeScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Seção de Recomendações de Artistas
                   if (musicProvider.recommendedArtists.isNotEmpty) ...[
                     Padding(
                       padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
@@ -109,7 +107,6 @@ class _HomeScreenState extends State<HomeScreen> {
                     const SizedBox(height: 24),
                   ],
                   
-                  // Seção de playlists populares
                   if (musicProvider.popularPlaylists.isNotEmpty) ...[
                     Padding(
                       padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
@@ -121,7 +118,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ),
                     SizedBox(
-                      height: 220,
+                      height: 240,
                       child: ListView.builder(
                         scrollDirection: Axis.horizontal,
                         padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -147,7 +144,6 @@ class _HomeScreenState extends State<HomeScreen> {
                     const SizedBox(height: 24),
                   ],
                   
-                  // Seção de faixas em alta
                   if (musicProvider.topTracks.isNotEmpty) ...[
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -160,7 +156,6 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                     const SizedBox(height: 16),
                     
-                    // Lista de faixas em alta
                     ListView.builder(
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
@@ -179,14 +174,14 @@ class _HomeScreenState extends State<HomeScreen> {
                                 color: Colors.grey[300],
                                 borderRadius: BorderRadius.circular(8),
                               ),
-                              child: track.coverUrl != null
-                                  ? (track.coverUrl!.startsWith('asset://')
+                              child: track.urlCapa != null
+                                  ? (track.urlCapa!.startsWith('asset://')
                                       ? Image.asset(
-                                          track.coverUrl!.replaceFirst('asset://', ''),
+                                          track.urlCapa!.replaceFirst('asset://', ''),
                                           fit: BoxFit.cover,
                                         )
                                       : Image.network(
-                                          track.coverUrl!,
+                                          track.urlCapa!,
                                           fit: BoxFit.cover,
                                           errorBuilder: (context, error, stackTrace) {
                                             return const Icon(
@@ -204,7 +199,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             ),
                           ),
                           title: Text(
-                            track.title,
+                            track.titulo,
                             style: Theme.of(context).textTheme.titleMedium?.copyWith(
                               fontWeight: FontWeight.w600,
                             ),
@@ -212,7 +207,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             overflow: TextOverflow.ellipsis,
                           ),
                           subtitle: Text(
-                            track.artist,
+                            track.artista,
                             style: Theme.of(context).textTheme.bodyMedium,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -280,7 +275,6 @@ class _HomeScreenState extends State<HomeScreen> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // Cabeçalho
                   Padding(
                     padding: const EdgeInsets.all(16),
                     child: Row(
@@ -302,7 +296,6 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                   const Divider(),
                   
-                  // Lista de playlists
                   Flexible(
                     child: musicProvider.localPlaylists.isEmpty
                         ? Padding(
@@ -339,7 +332,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             itemCount: musicProvider.localPlaylists.length,
                             itemBuilder: (context, index) {
                               final playlist = musicProvider.localPlaylists[index];
-                              final alreadyContains = playlist.containsTrack(track.id);
+                              final alreadyContains = playlist.contemFaixa(track.id);
                               
                               return ListTile(
                                 leading: PlaylistCover(
@@ -347,8 +340,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                   size: 50,
                                   borderRadius: 6,
                                 ),
-                                title: Text(playlist.name),
-                                subtitle: Text('${playlist.trackCount} faixas'),
+                                title: Text(playlist.nome),
+                                subtitle: Text('${playlist.quantidadeFaixas} faixas'),
                                 trailing: alreadyContains
                                     ? const Icon(Icons.check, color: Colors.green)
                                     : const Icon(Icons.add),
@@ -363,7 +356,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                           Navigator.pop(context);
                                           ScaffoldMessenger.of(context).showSnackBar(
                                             SnackBar(
-                                              content: Text('Música adicionada à ${playlist.name}'),
+                                              content: Text('Música adicionada à ${playlist.nome}'),
                                               backgroundColor: Colors.green,
                                             ),
                                           );
@@ -376,7 +369,6 @@ class _HomeScreenState extends State<HomeScreen> {
                   
                   const Divider(),
                   
-                  // Botão para criar nova playlist
                   Padding(
                     padding: const EdgeInsets.all(16),
                     child: SizedBox(

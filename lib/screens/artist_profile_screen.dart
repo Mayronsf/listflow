@@ -13,7 +13,6 @@ import '../widgets/playlist_cover.dart';
 import '../widgets/track_tile.dart';
 import 'create_playlist_screen.dart';
 
-/// Tela de perfil do artista
 class ArtistProfileScreen extends StatefulWidget {
   final Artist artist;
 
@@ -39,12 +38,12 @@ class _ArtistProfileScreenState extends State<ArtistProfileScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.artist.name),
+        title: Text(widget.artist.nome),
         actions: [
-          if (widget.artist.spotifyUrl != null)
+          if (widget.artist.urlSpotify != null)
             IconButton(
               onPressed: () async {
-                await _launchSpotifyUrl(widget.artist.spotifyUrl!);
+                await _launchSpotifyUrl(widget.artist.urlSpotify!);
               },
               icon: const Icon(Icons.open_in_new),
               tooltip: 'Abrir no Spotify',
@@ -55,13 +54,11 @@ class _ArtistProfileScreenState extends State<ArtistProfileScreen> {
         builder: (context, musicProvider, child) {
           return CustomScrollView(
             slivers: [
-              // Cabeçalho do artista
               SliverToBoxAdapter(
                 child: Container(
                   padding: const EdgeInsets.all(16),
                   child: Column(
                     children: [
-                      // Foto do artista
                       ClipRRect(
                         borderRadius: BorderRadius.circular(12),
                         child: Container(
@@ -71,9 +68,9 @@ class _ArtistProfileScreenState extends State<ArtistProfileScreen> {
                             color: Colors.grey[300],
                             borderRadius: BorderRadius.circular(12),
                           ),
-                          child: widget.artist.coverUrl != null
+                          child: widget.artist.urlCapa != null
                               ? CachedNetworkImage(
-                                  imageUrl: widget.artist.coverUrl!,
+                                  imageUrl: widget.artist.urlCapa!,
                                   fit: BoxFit.cover,
                                   placeholder: (context, url) => const Icon(
                                     Icons.person,
@@ -94,34 +91,28 @@ class _ArtistProfileScreenState extends State<ArtistProfileScreen> {
                         ),
                       ),
                       const SizedBox(height: 16),
-                      
-                      // Nome do artista
                       Text(
-                        widget.artist.name,
+                        widget.artist.nome,
                         style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                               fontWeight: FontWeight.bold,
                             ),
                         textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 8),
-                      
-                      // Informações do artista
-                      if (widget.artist.followers != null)
+                      if (widget.artist.seguidores != null)
                         Text(
-                          '${_formatFollowers(widget.artist.followers!)} seguidores',
+                          '${_formatFollowers(widget.artist.seguidores!)} seguidores',
                           style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                                 color: Colors.grey[600],
                               ),
                           textAlign: TextAlign.center,
                         ),
                       const SizedBox(height: 8),
-                      
-                      // Gêneros
-                      if (widget.artist.genres.isNotEmpty)
+                      if (widget.artist.generos.isNotEmpty)
                         Wrap(
                           alignment: WrapAlignment.center,
                           spacing: 8,
-                          children: widget.artist.genres.take(5).map((genre) {
+                          children: widget.artist.generos.take(5).map((genre) {
                             return Chip(
                               label: Text(genre),
                               backgroundColor: Theme.of(context).primaryColor.withOpacity(0.1),
@@ -129,8 +120,6 @@ class _ArtistProfileScreenState extends State<ArtistProfileScreen> {
                           }).toList(),
                         ),
                       const SizedBox(height: 16),
-                      
-                      // Contador de músicas
                       Text(
                         '${musicProvider.artistTracks.length} músicas',
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
@@ -142,8 +131,6 @@ class _ArtistProfileScreenState extends State<ArtistProfileScreen> {
                   ),
                 ),
               ),
-              
-              // Lista de músicas
               if (musicProvider.isLoading)
                 const SliverFillRemaining(
                   child: CenterLoadingWidget(message: 'Carregando músicas...'),
@@ -218,7 +205,6 @@ class _ArtistProfileScreenState extends State<ArtistProfileScreen> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // Cabeçalho
                   Padding(
                     padding: const EdgeInsets.all(16),
                     child: Row(
@@ -239,8 +225,6 @@ class _ArtistProfileScreenState extends State<ArtistProfileScreen> {
                     ),
                   ),
                   const Divider(),
-                  
-                  // Lista de playlists
                   Flexible(
                     child: musicProvider.localPlaylists.isEmpty
                         ? Padding(
@@ -277,7 +261,7 @@ class _ArtistProfileScreenState extends State<ArtistProfileScreen> {
                             itemCount: musicProvider.localPlaylists.length,
                             itemBuilder: (context, index) {
                               final playlist = musicProvider.localPlaylists[index];
-                              final alreadyContains = playlist.containsTrack(track.id);
+                              final alreadyContains = playlist.contemFaixa(track.id);
                               
                               return ListTile(
                                 leading: PlaylistCover(
@@ -285,8 +269,8 @@ class _ArtistProfileScreenState extends State<ArtistProfileScreen> {
                                   size: 50,
                                   borderRadius: 6,
                                 ),
-                                title: Text(playlist.name),
-                                subtitle: Text('${playlist.trackCount} faixas'),
+                                title: Text(playlist.nome),
+                                subtitle: Text('${playlist.quantidadeFaixas} faixas'),
                                 trailing: alreadyContains
                                     ? const Icon(Icons.check, color: Colors.green)
                                     : const Icon(Icons.add),
@@ -301,7 +285,7 @@ class _ArtistProfileScreenState extends State<ArtistProfileScreen> {
                                           Navigator.pop(context);
                                           ScaffoldMessenger.of(context).showSnackBar(
                                             SnackBar(
-                                              content: Text('Música adicionada à ${playlist.name}'),
+                                              content: Text('Música adicionada à ${playlist.nome}'),
                                               backgroundColor: Colors.green,
                                             ),
                                           );
@@ -313,8 +297,6 @@ class _ArtistProfileScreenState extends State<ArtistProfileScreen> {
                   ),
                   
                   const Divider(),
-                  
-                  // Botão para criar nova playlist
                   Padding(
                     padding: const EdgeInsets.all(16),
                     child: SizedBox(
@@ -347,8 +329,6 @@ class _ArtistProfileScreenState extends State<ArtistProfileScreen> {
       ),
     );
   }
-
-  /// Abre o link do Spotify do artista
   Future<void> _launchSpotifyUrl(String url) async {
     try {
       final uri = Uri.parse(url);
@@ -379,4 +359,5 @@ class _ArtistProfileScreenState extends State<ArtistProfileScreen> {
     }
   }
 }
+
 

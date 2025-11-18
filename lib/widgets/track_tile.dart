@@ -6,7 +6,6 @@ import 'package:url_launcher/url_launcher.dart';
 import '../models/track.dart';
 import '../screens/artist_profile_screen.dart';
 
-/// Tile para exibir uma faixa musical
 class TrackTile extends StatelessWidget {
   final Track track;
   final VoidCallback? onFavorite;
@@ -39,14 +38,14 @@ class TrackTile extends StatelessWidget {
               color: Colors.grey[300],
               borderRadius: BorderRadius.circular(8),
             ),
-            child: track.coverUrl != null
-                ? (track.coverUrl!.startsWith('asset://')
+            child: track.urlCapa != null
+                ? (track.urlCapa!.startsWith('asset://')
                     ? Image.asset(
-                        track.coverUrl!.replaceFirst('asset://', ''),
+                        track.urlCapa!.replaceFirst('asset://', ''),
                         fit: BoxFit.cover,
                       )
                     : CachedNetworkImage(
-                        imageUrl: track.coverUrl!,
+                        imageUrl: track.urlCapa!,
                         fit: BoxFit.cover,
                         placeholder: (context, url) => Container(
                           color: Colors.grey[300],
@@ -77,7 +76,7 @@ class TrackTile extends StatelessWidget {
         ),
         
         title: Text(
-          track.title,
+                      track.titulo,
           style: Theme.of(context).textTheme.titleMedium?.copyWith(
             fontWeight: FontWeight.w600,
           ),
@@ -89,11 +88,10 @@ class TrackTile extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             GestureDetector(
-              onTap: track.sourceType == 'spotify' && track.artist.isNotEmpty
+              onTap: track.tipoFonte == 'spotify' && track.artista.isNotEmpty
                   ? () async {
-                      // Busca o artista pelo nome e abre o perfil
                       final musicProvider = context.read<MusicProvider>();
-                      await musicProvider.searchArtistsByQuery(track.artist);
+                      await musicProvider.searchArtistsByQuery(track.artista);
                       if (musicProvider.searchArtists.isNotEmpty) {
                         final artist = musicProvider.searchArtists.first;
                         Navigator.push(
@@ -106,7 +104,7 @@ class TrackTile extends StatelessWidget {
                     }
                   : null,
               child: Text(
-                track.artist,
+                track.artista,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       color: Colors.white,
                     ),
@@ -114,22 +112,51 @@ class TrackTile extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
               ),
             ),
-            if (track.sourceType != null) ...[
+            if (track.tipoFonte != null) ...[
               const SizedBox(height: 2),
               Row(
                 children: [
                   Icon(
-                    _getSourceIcon(track.sourceType!),
+                    _getSourceIcon(track.tipoFonte!),
                     size: 12,
                     color: Colors.white,
                   ),
                   const SizedBox(width: 4),
                   Text(
-                    _getSourceName(track.sourceType!),
+                    _getSourceName(track.tipoFonte!),
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: Colors.white,
                     ),
                   ),
+                  if (track.urlPrevia != null) ...[
+                    const SizedBox(width: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                      decoration: BoxDecoration(
+                        color: Colors.green[700],
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.play_circle_outline,
+                            size: 10,
+                            color: Colors.white,
+                          ),
+                          const SizedBox(width: 2),
+                          Text(
+                            'Prévia',
+                            style: TextStyle(
+                              fontSize: 9,
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ],
@@ -139,7 +166,6 @@ class TrackTile extends StatelessWidget {
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Botão de favoritar
             if (showFavoriteButton && onFavorite != null)
               IconButton(
                 onPressed: onFavorite,
@@ -152,7 +178,6 @@ class TrackTile extends StatelessWidget {
                 constraints: const BoxConstraints(),
               ),
             
-            // Botão de adicionar à playlist
             if (showAddToPlaylistButton && onAddToPlaylist != null)
               IconButton(
                 onPressed: onAddToPlaylist,
@@ -162,28 +187,14 @@ class TrackTile extends StatelessWidget {
                 constraints: const BoxConstraints(),
               ),
             
-            // Botão de preview (Spotify) ou abrir link completo
-            IconButton(
-              onPressed: () {
-                final music = context.read<MusicProvider>();
-                if (track.previewUrl != null) {
-                  music.playPreview(track);
-                } else if (track.sourceUrl != null) {
-                  _launchUrl(track.sourceUrl!);
-                }
-              },
-              icon: const Icon(Icons.play_arrow),
-              iconSize: 20,
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(),
-            ),
-            if (track.sourceUrl != null)
+            if (track.urlFonte != null)
               IconButton(
-                onPressed: () => _launchUrl(track.sourceUrl!),
+                onPressed: () => _launchUrl(track.urlFonte!),
                 icon: const Icon(Icons.open_in_new),
-                iconSize: 18,
+                iconSize: 22,
                 padding: EdgeInsets.zero,
                 constraints: const BoxConstraints(),
+                tooltip: 'Abrir no Spotify',
               ),
           ],
         ),
@@ -191,7 +202,6 @@ class TrackTile extends StatelessWidget {
     );
   }
 
-  /// Obtém o ícone da fonte
   IconData _getSourceIcon(String sourceType) {
     switch (sourceType.toLowerCase()) {
       case 'deezer':
@@ -207,7 +217,6 @@ class TrackTile extends StatelessWidget {
     }
   }
 
-  /// Obtém o nome da fonte
   String _getSourceName(String sourceType) {
     switch (sourceType.toLowerCase()) {
       case 'deezer':
@@ -223,7 +232,6 @@ class TrackTile extends StatelessWidget {
     }
   }
 
-  /// Abre o link da faixa
   Future<void> _launchUrl(String url) async {
     final uri = Uri.parse(url);
     if (await canLaunchUrl(uri)) {

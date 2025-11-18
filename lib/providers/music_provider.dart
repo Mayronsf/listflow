@@ -3,40 +3,31 @@ import '../models/track.dart';
 import '../models/playlist.dart';
 import '../models/artist.dart';
 import '../services/spotify_service.dart';
-import '../services/audio_player_service.dart';
 import '../services/storage_service.dart';
 
-/// Provider para gerenciar estado da música e playlists
 class MusicProvider with ChangeNotifier {
   final SpotifyService _spotify = SpotifyService();
-  final AudioPlayerService _audio = AudioPlayerService();
   final StorageService _storageService = StorageService.instance;
 
-  // Estado das playlists
   List<Playlist> _popularPlaylists = [];
   List<Playlist> _searchResults = [];
   List<Playlist> _localPlaylists = [];
   
-  // Estado das faixas
   List<Track> _favoriteTracks = [];
   List<Track> _searchTracks = [];
   List<Track> _currentPlaylistTracks = [];
   List<Track> _artistTracks = [];
   List<Track> _topTracks = [];
   
-  // Estado dos artistas
   List<Artist> _searchArtists = [];
   List<Artist> _recommendedArtists = [];
   Artist? _currentArtist;
   
-  // Estado de carregamento
   bool _isLoading = false;
   bool _isSearching = false;
   
-  // Estado de erro
   String? _error;
 
-  // Getters
   List<Playlist> get popularPlaylists => _popularPlaylists;
   List<Playlist> get searchResults => _searchResults;
   List<Playlist> get localPlaylists => _localPlaylists;
@@ -52,21 +43,17 @@ class MusicProvider with ChangeNotifier {
   bool get isSearching => _isSearching;
   String? get error => _error;
 
-  /// Inicializa o provider
   Future<void> init() async {
     await _storageService.init();
-    await _audio.init();
     await loadLocalData();
     await loadPopularPlaylists();
   }
 
-  /// Carrega dados locais (favoritos e playlists locais)
   Future<void> loadLocalData() async {
     try {
-      _favoriteTracks = await _storageService.loadFavorites();
-      _localPlaylists = await _storageService.loadLocalPlaylists();
+      _favoriteTracks = await _storageService.carregarFavoritas();
+      _localPlaylists = await _storageService.carregarPlaylistsLocais();
       
-      // Sincroniza a playlist de músicas curtidas com os favoritos
       await _syncFavoritesPlaylist();
       
       notifyListeners();
@@ -76,61 +63,55 @@ class MusicProvider with ChangeNotifier {
     }
   }
 
-  /// Sincroniza a playlist de músicas curtidas com os favoritos
   Future<void> _syncFavoritesPlaylist() async {
     const favoritesPlaylistId = 'favorites_playlist';
     
-    // Busca ou cria a playlist
     var favoritesPlaylist = _localPlaylists.firstWhere(
       (p) => p.id == favoritesPlaylistId,
       orElse: () => Playlist(
         id: favoritesPlaylistId,
-        name: 'Músicas Curtidas',
-        description: 'Suas músicas favoritas',
-        isLocal: true,
-        createdAt: DateTime.now(),
-        tracks: [],
+        nome: 'Músicas Curtidas',
+        descricao: 'Suas músicas favoritas',
+        ehLocal: true,
+        criadaEm: DateTime.now(),
+        faixas: [],
       ),
     );
     
-    // Adiciona todas as músicas favoritas que ainda não estão na playlist
     for (final track in _favoriteTracks) {
-      if (!favoritesPlaylist.containsTrack(track.id)) {
-        favoritesPlaylist = favoritesPlaylist.addTrack(track);
+      if (!favoritesPlaylist.contemFaixa(track.id)) {
+        favoritesPlaylist = favoritesPlaylist.adicionarFaixa(track);
       }
     }
     
-    // Remove músicas da playlist que não estão mais nos favoritos
     final favoriteTrackIds = _favoriteTracks.map((t) => t.id).toSet();
     favoritesPlaylist = Playlist(
       id: favoritesPlaylist.id,
-      name: favoritesPlaylist.name,
-      description: favoritesPlaylist.description,
-      coverUrl: favoritesPlaylist.coverUrl,
-      creatorId: favoritesPlaylist.creatorId,
-      creatorName: favoritesPlaylist.creatorName,
-      tracks: favoritesPlaylist.tracks.where((t) => favoriteTrackIds.contains(t.id)).toList(),
-      createdAt: favoritesPlaylist.createdAt,
-      isPublic: favoritesPlaylist.isPublic,
-      isLocal: favoritesPlaylist.isLocal,
+      nome: favoritesPlaylist.nome,
+      descricao: favoritesPlaylist.descricao,
+      urlCapa: favoritesPlaylist.urlCapa,
+      idCriador: favoritesPlaylist.idCriador,
+      nomeCriador: favoritesPlaylist.nomeCriador,
+      faixas: favoritesPlaylist.faixas.where((t) => favoriteTrackIds.contains(t.id)).toList(),
+      criadaEm: favoritesPlaylist.criadaEm,
+      ehPublica: favoritesPlaylist.ehPublica,
+      ehLocal: favoritesPlaylist.ehLocal,
     );
     
-    // Atualiza a lista local e salva
     final playlistIndex = _localPlaylists.indexWhere((p) => p.id == favoritesPlaylistId);
     if (playlistIndex != -1) {
       _localPlaylists[playlistIndex] = favoritesPlaylist;
-      await _storageService.updateLocalPlaylist(favoritesPlaylist);
+      await _storageService.atualizarPlaylistLocal(favoritesPlaylist);
     } else {
       _localPlaylists.add(favoritesPlaylist);
-      await _storageService.addLocalPlaylist(favoritesPlaylist);
+      await _storageService.adicionarPlaylistLocal(favoritesPlaylist);
     }
   }
 
-  /// Carrega playlists populares
   Future<void> loadPopularPlaylists() async {
     _setLoading(true);
     try {
-      _popularPlaylists = await _spotify.getFeaturedPlaylists();
+      _popularPlaylists = await _spotify.obterPlaylistsEmDestaque();
       _error = null;
     } catch (e) {
       _error = 'Erro ao carregar playlists: $e';
@@ -139,10 +120,9 @@ class MusicProvider with ChangeNotifier {
     }
   }
 
-  /// Carrega artistas recomendados
   Future<void> loadRecommendedArtists({int limit = 20}) async {
     try {
-      _recommendedArtists = await _spotify.getRecommendedArtists(limit: limit);
+      _recommendedArtists = await _spotify.obterArtistasRecomendados(limite: limit);
       _error = null;
     } catch (e) {
       _error = 'Erro ao carregar artistas recomendados: $e';
@@ -151,10 +131,9 @@ class MusicProvider with ChangeNotifier {
     }
   }
 
-  /// Carrega faixas em alta no Brasil
   Future<void> loadTopTracks({int limit = 50}) async {
     try {
-      _topTracks = await _spotify.getTopTracksBrazil(limit: limit);
+      _topTracks = await _spotify.obterTopFaixasBrasil(limite: limit);
       _error = null;
     } catch (e) {
       _error = 'Erro ao carregar faixas em alta: $e';
@@ -163,54 +142,36 @@ class MusicProvider with ChangeNotifier {
     }
   }
 
-  /// Carrega faixas de uma playlist
   Future<void> loadPlaylistTracks(String playlistId) async {
     _setLoading(true);
     try {
-      // Primeiro, tenta buscar nas playlists locais
-      await loadLocalData(); // Garante que as playlists locais estão carregadas
+      await loadLocalData();
       
-      // Busca a playlist nas locais
       final localPlaylist = _localPlaylists.firstWhere(
         (p) => p.id == playlistId,
-        orElse: () => Playlist(id: '', name: ''),
+        orElse: () => Playlist(id: '', nome: ''),
       );
       
-      if (localPlaylist.id.isNotEmpty && localPlaylist.isLocal) {
-        // Se encontrou uma playlist local, usa as tracks dela
-        _currentPlaylistTracks = localPlaylist.tracks;
+      if (localPlaylist.id.isNotEmpty && localPlaylist.ehLocal) {
+        _currentPlaylistTracks = localPlaylist.faixas;
         _error = null;
         _setLoading(false);
         notifyListeners();
         return;
       }
       
-      // Se não encontrou nas locais, tenta buscar nas populares
-      final popularPlaylist = _popularPlaylists.firstWhere(
-        (p) => p.id == playlistId,
-        orElse: () => Playlist(id: '', name: ''),
-      );
-      
-      if (popularPlaylist.id.isNotEmpty) {
-        _currentPlaylistTracks = popularPlaylist.tracks;
-        _error = null;
-        _setLoading(false);
-        notifyListeners();
-        return;
-      }
-      
-      // Se não encontrou em lugar nenhum, lista vazia
-      _currentPlaylistTracks = [];
+      final tracks = await _spotify.obterFaixasDaPlaylist(playlistId);
+      _currentPlaylistTracks = tracks;
       _error = null;
     } catch (e) {
       _error = 'Erro ao carregar faixas da playlist: $e';
+      _currentPlaylistTracks = [];
     } finally {
       _setLoading(false);
       notifyListeners();
     }
   }
 
-  /// Busca faixas
   Future<void> searchTracks(String query) async {
     if (query.trim().isEmpty) {
       _searchTracks = [];
@@ -220,9 +181,9 @@ class MusicProvider with ChangeNotifier {
 
     _setSearching(true);
     try {
-      final result = await _spotify.searchAll(query);
+      final result = await _spotify.buscarTudo(query);
       final items = (result['tracks']?['items'] as List?) ?? [];
-      _searchTracks = items.map((t) => _spotify.trackFromSpotifyJson(t)).toList().cast<Track>();
+      _searchTracks = items.map((t) => _spotify.faixaDoJsonSpotify(t)).toList().cast<Track>();
       _error = null;
     } catch (e) {
       _error = 'Erro na busca: $e';
@@ -231,7 +192,6 @@ class MusicProvider with ChangeNotifier {
     }
   }
 
-  /// Busca playlists
   Future<void> searchPlaylists(String query) async {
     if (query.trim().isEmpty) {
       _searchResults = [];
@@ -241,37 +201,32 @@ class MusicProvider with ChangeNotifier {
 
     _setSearching(true);
     try {
-      // Garante que as playlists locais estão carregadas
       await loadLocalData();
       
       final queryLower = query.toLowerCase().trim();
       final List<Playlist> allResults = [];
       
-      // Busca nas playlists locais primeiro
       final localMatches = _localPlaylists.where((playlist) {
-        final nameMatch = playlist.name.toLowerCase().contains(queryLower);
-        final descMatch = (playlist.description?.toLowerCase().contains(queryLower)) ?? false;
+        final nameMatch = playlist.nome.toLowerCase().contains(queryLower);
+        final descMatch = (playlist.descricao?.toLowerCase().contains(queryLower)) ?? false;
         return nameMatch || descMatch;
       }).toList();
       
-      // Adiciona as playlists locais encontradas (prioridade)
       allResults.addAll(localMatches);
       
-      // Busca no Spotify
       try {
-        final result = await _spotify.searchAll(query);
+        final result = await _spotify.buscarTudo(query);
         final items = (result['playlists']?['items'] as List?) ?? [];
         final spotifyPlaylists = items.map((p) => Playlist(
           id: p['id'] ?? '',
-          name: p['name'] ?? '',
-          description: p['description'],
-          coverUrl: ((p['images'] as List?)?.isNotEmpty ?? false) ? p['images'][0]['url'] : null,
-          creatorName: p['owner']?['display_name'] ?? p['owner']?['id'],
-          tracks: const [],
-          createdAt: DateTime.now(),
+          nome: p['name'] ?? '',
+          descricao: p['description'],
+          urlCapa: ((p['images'] as List?)?.isNotEmpty ?? false) ? p['images'][0]['url'] : null,
+          nomeCriador: p['owner']?['display_name'] ?? p['owner']?['id'],
+          faixas: const [],
+          criadaEm: DateTime.now(),
         )).toList().cast<Playlist>();
         
-        // Adiciona playlists do Spotify que não são duplicadas (por ID)
         final localIds = localMatches.map((p) => p.id).toSet();
         for (final spotifyPlaylist in spotifyPlaylists) {
           if (!localIds.contains(spotifyPlaylist.id)) {
@@ -279,7 +234,6 @@ class MusicProvider with ChangeNotifier {
           }
         }
       } catch (e) {
-        // Se houver erro na busca do Spotify, continua apenas com as locais
         print('Erro ao buscar playlists no Spotify: $e');
       }
       
@@ -293,7 +247,6 @@ class MusicProvider with ChangeNotifier {
     }
   }
 
-  /// Busca artistas
   Future<void> searchArtistsByQuery(String query) async {
     if (query.trim().isEmpty) {
       _searchArtists = [];
@@ -303,9 +256,9 @@ class MusicProvider with ChangeNotifier {
 
     _setSearching(true);
     try {
-      final result = await _spotify.searchAll(query);
+      final result = await _spotify.buscarTudo(query);
       final items = (result['artists']?['items'] as List?) ?? [];
-      _searchArtists = items.map((a) => _spotify.artistFromSpotifyJson(a)).toList().cast<Artist>();
+      _searchArtists = items.map((a) => _spotify.artistaDoJsonSpotify(a)).toList().cast<Artist>();
       _error = null;
     } catch (e) {
       _error = 'Erro na busca de artistas: $e';
@@ -314,14 +267,13 @@ class MusicProvider with ChangeNotifier {
     }
   }
 
-  /// Carrega artista e suas músicas
   Future<void> loadArtist(String artistId) async {
     _setLoading(true);
     try {
-      final artist = await _spotify.getArtistById(artistId);
+      final artist = await _spotify.obterArtistaPorId(artistId);
       if (artist != null) {
         _currentArtist = artist;
-        final tracks = await _spotify.getArtistTracks(artistId);
+        final tracks = await _spotify.obterFaixasDoArtista(artistId);
         _artistTracks = tracks;
         _error = null;
       } else {
@@ -334,48 +286,43 @@ class MusicProvider with ChangeNotifier {
     }
   }
 
-  /// Obtém ou cria a playlist de músicas curtidas
   Future<Playlist> _getOrCreateFavoritesPlaylist() async {
     const favoritesPlaylistId = 'favorites_playlist';
     
-    // Busca a playlist nas locais
     var favoritesPlaylist = _localPlaylists.firstWhere(
       (p) => p.id == favoritesPlaylistId,
-      orElse: () => Playlist(id: '', name: ''),
+      orElse: () => Playlist(id: '', nome: ''),
     );
     
-    // Se não encontrou, cria uma nova
     if (favoritesPlaylist.id.isEmpty) {
       favoritesPlaylist = Playlist(
         id: favoritesPlaylistId,
-        name: 'Músicas Curtidas',
-        description: 'Suas músicas favoritas',
-        isLocal: true,
-        createdAt: DateTime.now(),
-        tracks: [],
+        nome: 'Músicas Curtidas',
+        descricao: 'Suas músicas favoritas',
+        ehLocal: true,
+        criadaEm: DateTime.now(),
+        faixas: [],
       );
       
-      await _storageService.addLocalPlaylist(favoritesPlaylist);
+      await _storageService.adicionarPlaylistLocal(favoritesPlaylist);
       _localPlaylists.add(favoritesPlaylist);
     }
     
     return favoritesPlaylist;
   }
 
-  /// Adiciona uma faixa aos favoritos
   Future<void> addToFavorites(Track track) async {
     try {
-      await _storageService.addFavorite(track);
-      _favoriteTracks.add(track.copyWith(isFavorite: true));
+      await _storageService.adicionarFavorita(track);
+      _favoriteTracks.add(track.copiarCom(ehFavorito: true));
       
-      // Adiciona à playlist de músicas curtidas
       final favoritesPlaylist = await _getOrCreateFavoritesPlaylist();
-      if (!favoritesPlaylist.containsTrack(track.id)) {
-        final updatedPlaylist = favoritesPlaylist.addTrack(track);
+      if (!favoritesPlaylist.contemFaixa(track.id)) {
+        final updatedPlaylist = favoritesPlaylist.adicionarFaixa(track);
         final playlistIndex = _localPlaylists.indexWhere((p) => p.id == favoritesPlaylist.id);
         if (playlistIndex != -1) {
           _localPlaylists[playlistIndex] = updatedPlaylist;
-          await _storageService.updateLocalPlaylist(updatedPlaylist);
+          await _storageService.atualizarPlaylistLocal(updatedPlaylist);
         }
       }
       
@@ -386,19 +333,17 @@ class MusicProvider with ChangeNotifier {
     }
   }
 
-  /// Remove uma faixa dos favoritos
   Future<void> removeFromFavorites(String trackId) async {
     try {
-      await _storageService.removeFavorite(trackId);
+      await _storageService.removerFavorita(trackId);
       _favoriteTracks.removeWhere((track) => track.id == trackId);
       
-      // Remove da playlist de músicas curtidas
       const favoritesPlaylistId = 'favorites_playlist';
       final playlistIndex = _localPlaylists.indexWhere((p) => p.id == favoritesPlaylistId);
       if (playlistIndex != -1) {
-        final updatedPlaylist = _localPlaylists[playlistIndex].removeTrack(trackId);
+        final updatedPlaylist = _localPlaylists[playlistIndex].removerFaixa(trackId);
         _localPlaylists[playlistIndex] = updatedPlaylist;
-        await _storageService.updateLocalPlaylist(updatedPlaylist);
+        await _storageService.atualizarPlaylistLocal(updatedPlaylist);
       }
       
       notifyListeners();
@@ -408,23 +353,21 @@ class MusicProvider with ChangeNotifier {
     }
   }
 
-  /// Verifica se uma faixa está nos favoritos
   bool isFavorite(String trackId) {
     return _favoriteTracks.any((track) => track.id == trackId);
   }
 
-  /// Cria uma nova playlist local
   Future<void> createLocalPlaylist(String name, {String? description}) async {
     try {
       final playlist = Playlist(
         id: DateTime.now().millisecondsSinceEpoch.toString(),
-        name: name,
-        description: description,
-        isLocal: true,
-        createdAt: DateTime.now(),
+        nome: name,
+        descricao: description,
+        ehLocal: true,
+        criadaEm: DateTime.now(),
       );
       
-      await _storageService.addLocalPlaylist(playlist);
+      await _storageService.adicionarPlaylistLocal(playlist);
       _localPlaylists.add(playlist);
       notifyListeners();
     } catch (e) {
@@ -433,7 +376,6 @@ class MusicProvider with ChangeNotifier {
     }
   }
 
-  /// Cria uma playlist local com capa e músicas
   Future<bool> createLocalPlaylistWithDetails({
     required String name,
     String description = '',
@@ -444,21 +386,19 @@ class MusicProvider with ChangeNotifier {
     try {
       final playlistId = DateTime.now().millisecondsSinceEpoch.toString();
       
-      // Cria a playlist com as tracks
       final playlist = Playlist(
         id: playlistId,
-        name: name,
-        description: description.isEmpty ? null : description,
-        isPublic: isPublic,
-        isLocal: true,
-        tracks: tracks,
-        createdAt: DateTime.now(),
+        nome: name,
+        descricao: description.isEmpty ? null : description,
+        ehPublica: isPublic,
+        ehLocal: true,
+        faixas: tracks,
+        criadaEm: DateTime.now(),
       );
 
-      await _storageService.addLocalPlaylist(playlist);
+      await _storageService.adicionarPlaylistLocal(playlist);
       _localPlaylists.add(playlist);
       
-      // Recarrega as playlists locais
       await loadLocalData();
 
       _error = null;
@@ -471,7 +411,6 @@ class MusicProvider with ChangeNotifier {
     }
   }
 
-  /// Atualiza uma playlist local com novos detalhes
   Future<bool> updateLocalPlaylistWithDetails({
     required String playlistId,
     required String name,
@@ -490,22 +429,20 @@ class MusicProvider with ChangeNotifier {
 
       final existingPlaylist = _localPlaylists[playlistIndex];
       
-      // Atualiza a playlist
       final updatedPlaylist = Playlist(
         id: playlistId,
-        name: name,
-        description: description.isEmpty ? null : description,
-        coverUrl: existingPlaylist.isLocal ? null : existingPlaylist.coverUrl,
-        isPublic: isPublic,
-        isLocal: true,
-        tracks: tracks,
-        createdAt: existingPlaylist.createdAt, // Mantém a data de criação original
+        nome: name,
+        descricao: description.isEmpty ? null : description,
+        urlCapa: existingPlaylist.ehLocal ? null : existingPlaylist.urlCapa,
+        ehPublica: isPublic,
+        ehLocal: true,
+        faixas: tracks,
+        criadaEm: existingPlaylist.criadaEm,
       );
 
-      await _storageService.updateLocalPlaylist(updatedPlaylist);
+      await _storageService.atualizarPlaylistLocal(updatedPlaylist);
       _localPlaylists[playlistIndex] = updatedPlaylist;
       
-      // Recarrega as playlists locais
       await loadLocalData();
 
       _error = null;
@@ -518,14 +455,13 @@ class MusicProvider with ChangeNotifier {
     }
   }
 
-  /// Adiciona uma faixa a uma playlist local
   Future<void> addTrackToLocalPlaylist(String playlistId, Track track) async {
     try {
       final playlistIndex = _localPlaylists.indexWhere((p) => p.id == playlistId);
       if (playlistIndex != -1) {
-        final updatedPlaylist = _localPlaylists[playlistIndex].addTrack(track);
+        final updatedPlaylist = _localPlaylists[playlistIndex].adicionarFaixa(track);
         _localPlaylists[playlistIndex] = updatedPlaylist;
-        await _storageService.updateLocalPlaylist(updatedPlaylist);
+        await _storageService.atualizarPlaylistLocal(updatedPlaylist);
         notifyListeners();
       }
     } catch (e) {
@@ -534,14 +470,13 @@ class MusicProvider with ChangeNotifier {
     }
   }
 
-  /// Remove uma faixa de uma playlist local
   Future<void> removeTrackFromLocalPlaylist(String playlistId, String trackId) async {
     try {
       final playlistIndex = _localPlaylists.indexWhere((p) => p.id == playlistId);
       if (playlistIndex != -1) {
-        final updatedPlaylist = _localPlaylists[playlistIndex].removeTrack(trackId);
+        final updatedPlaylist = _localPlaylists[playlistIndex].removerFaixa(trackId);
         _localPlaylists[playlistIndex] = updatedPlaylist;
-        await _storageService.updateLocalPlaylist(updatedPlaylist);
+        await _storageService.atualizarPlaylistLocal(updatedPlaylist);
         notifyListeners();
       }
     } catch (e) {
@@ -550,10 +485,9 @@ class MusicProvider with ChangeNotifier {
     }
   }
 
-  /// Remove uma playlist local
   Future<void> removeLocalPlaylist(String playlistId) async {
     try {
-      await _storageService.removeLocalPlaylist(playlistId);
+      await _storageService.removerPlaylistLocal(playlistId);
       _localPlaylists.removeWhere((playlist) => playlist.id == playlistId);
       notifyListeners();
     } catch (e) {
@@ -562,10 +496,9 @@ class MusicProvider with ChangeNotifier {
     }
   }
 
-  /// Limpa todos os dados locais
   Future<void> clearAllLocalData() async {
     try {
-      await _storageService.clearAllData();
+      await _storageService.limparTodosDados();
       _favoriteTracks.clear();
       _localPlaylists.clear();
       notifyListeners();
@@ -575,10 +508,9 @@ class MusicProvider with ChangeNotifier {
     }
   }
 
-  /// Limpa apenas os favoritos
   Future<void> clearFavorites() async {
     try {
-      await _storageService.clearFavorites();
+      await _storageService.limparFavoritas();
       _favoriteTracks.clear();
       notifyListeners();
     } catch (e) {
@@ -587,10 +519,9 @@ class MusicProvider with ChangeNotifier {
     }
   }
 
-  /// Limpa apenas as playlists locais
   Future<void> clearLocalPlaylists() async {
     try {
-      await _storageService.clearLocalPlaylists();
+      await _storageService.limparPlaylistsLocais();
       _localPlaylists.clear();
       notifyListeners();
     } catch (e) {
@@ -599,11 +530,8 @@ class MusicProvider with ChangeNotifier {
     }
   }
 
-  /// Atualiza o nome do usuário
   Future<void> updateUserName(String newName) async {
     try {
-      // Aqui você pode implementar a lógica para salvar o nome do usuário
-      // Por enquanto, vamos apenas simular a atualização
       print('Nome do usuário atualizado para: $newName');
       notifyListeners();
     } catch (e) {
@@ -613,19 +541,16 @@ class MusicProvider with ChangeNotifier {
   }
 
 
-  /// Limpa o erro
   void clearError() {
     _error = null;
     notifyListeners();
   }
 
-  /// Define estado de carregamento
   void _setLoading(bool loading) {
     _isLoading = loading;
     notifyListeners();
   }
 
-  /// Define estado de busca
   void _setSearching(bool searching) {
     _isSearching = searching;
     notifyListeners();
@@ -633,31 +558,7 @@ class MusicProvider with ChangeNotifier {
 
   @override
   void dispose() {
-    _spotify.dispose();
-    _audio.dispose();
+    _spotify.descartar();
     super.dispose();
-  }
-
-  // --- Preview controls ---
-  Track? _currentTrack;
-  Track? get currentTrack => _currentTrack;
-  bool get isPlaying => _audio.isPlaying;
-
-  Future<void> playPreview(Track track) async {
-    if (track.previewUrl == null) return;
-    _currentTrack = track;
-    await _audio.playUrl(track.previewUrl!);
-    notifyListeners();
-  }
-
-  Future<void> pausePreview() async {
-    await _audio.pause();
-    notifyListeners();
-  }
-
-  Future<void> stopPreview() async {
-    await _audio.stop();
-    _currentTrack = null;
-    notifyListeners();
   }
 }

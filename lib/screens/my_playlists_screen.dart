@@ -7,7 +7,6 @@ import '../widgets/error_widget.dart';
 import 'playlist_detail_screen.dart';
 import 'create_playlist_screen.dart';
 
-/// Tela de minhas playlists
 class MyPlaylistsScreen extends StatefulWidget {
   const MyPlaylistsScreen({super.key});
 
@@ -38,7 +37,6 @@ class _MyPlaylistsScreenState extends State<MyPlaylistsScreen> {
                   builder: (context) => const CreatePlaylistScreen(),
                 ),
               ).then((_) {
-                // Recarregar playlists após criar
                 context.read<MusicProvider>().loadLocalData();
               });
             },
