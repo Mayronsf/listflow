@@ -28,7 +28,6 @@ class _CreatePlaylistScreenState extends State<CreatePlaylistScreen> {
   final _searchController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
 
-  bool _isPublic = true;
   late List<Track> _selectedTracks;
   List<Track> _searchResults = [];
   bool _isSearching = false;
@@ -43,7 +42,6 @@ class _CreatePlaylistScreenState extends State<CreatePlaylistScreen> {
     if (_isEditing && widget.playlistToEdit != null) {
       _nameController.text = widget.playlistToEdit!.nome;
       _descriptionController.text = widget.playlistToEdit!.descricao ?? '';
-      _isPublic = widget.playlistToEdit!.ehPublica;
       _selectedTracks = List<Track>.from(widget.playlistToEdit!.faixas);
     } else {
       _selectedTracks = widget.initialTracks ?? [];
@@ -108,14 +106,14 @@ class _CreatePlaylistScreenState extends State<CreatePlaylistScreen> {
         playlistId: widget.playlistToEdit!.id,
         name: _nameController.text.trim(),
         description: _descriptionController.text.trim(),
-        isPublic: _isPublic,
+        isPublic: true,
         tracks: _selectedTracks,
       );
     } else {
       success = await musicProvider.createLocalPlaylistWithDetails(
         name: _nameController.text.trim(),
         description: _descriptionController.text.trim(),
-        isPublic: _isPublic,
+        isPublic: true,
         tracks: _selectedTracks,
       );
     }
@@ -158,7 +156,7 @@ class _CreatePlaylistScreenState extends State<CreatePlaylistScreen> {
       nomeCriador: base?.nomeCriador,
       faixas: _selectedTracks,
       criadaEm: base?.criadaEm ?? DateTime.now(),
-      ehPublica: _isPublic,
+      ehPublica: true,
       ehLocal: true,
     );
   }
@@ -232,17 +230,6 @@ class _CreatePlaylistScreenState extends State<CreatePlaylistScreen> {
                 ),
                 maxLines: 3,
                 onChanged: (_) => setState(() {}),
-              ),
-              const SizedBox(height: 16),
-              SwitchListTile(
-                title: const Text('Pública'),
-                subtitle: Text(_isPublic ? 'Qualquer pessoa pode ver' : 'Apenas você pode ver'),
-                value: _isPublic,
-                onChanged: (value) {
-                  setState(() {
-                    _isPublic = value;
-                  });
-                },
               ),
               const SizedBox(height: 24),
               if (_selectedTracks.isNotEmpty)
